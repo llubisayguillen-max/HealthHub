@@ -1,3 +1,4 @@
+import javax.swing.JOptionPane;
 
 public class Medico extends Usuario implements Menu {
 
@@ -77,7 +78,7 @@ public class Medico extends Usuario implements Menu {
 	
 	@Override
     public void MostrarMenu() {
-        javax.swing.JOptionPane.showMessageDialog(null,
+        JOptionPane.showMessageDialog(null,
             "MENÚ MÉDICO \n1) Registrar disponibilidad \n2) Confirmar asistencia \n3) Salir");
     }
 	
