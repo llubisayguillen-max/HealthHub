@@ -1,9 +1,5 @@
-package sistemaControl;
 
-import java.util.ArrayList;
-import java.util.List;
-
-public class Medico extends Usuario {
+public class Medico extends Usuario implements Menu {
 
 	private int matricula;
 	private String especialidad;
@@ -16,7 +12,7 @@ public class Medico extends Usuario {
 		this.matricula = matricula;
 		this.especialidad = especialidad;
 		this.disponibilidadSemanal = new String[7];
-		this.agenda = new turno[100];
+		this.agenda = new Turno[100];
 	}
 
 	public int getMatricula() {
@@ -55,9 +51,20 @@ public class Medico extends Usuario {
 		this.disponibilidadSemanal[dia] = horario;
 	}
 	
-	public void modificarDisponibilidad(Consulta consulta) {
-		System.out.println("Consulta registrada: " + consulta.getMotivo());;
+	public void modificarDisponibilidad(int dia, String nuevoHorario) {
+		this.disponibilidadSemanal[dia] = nuevoHorario;
 	}
+	
+	public void registrarConsulta(Turno turno, Consulta consulta) {        
+        Paciente p = turno.getPaciente();
+        if (p != null && p.getHistorial() != null) {
+            String obs = p.getHistorial().getObservaciones();
+            String nueva = (obs == null ? "" : obs + "\n") +
+                           "Consulta [" + consulta.getFecha() + "]: " + consulta.getMotivo();
+            p.getHistorial().setObservaciones(nueva);
+        }
+        System.out.println("Consulta registrada: " + consulta.getMotivo());
+    }
 	
 	public void confirmarAsistencia(Turno turno) {
         turno.confirmarAsistencia();
@@ -67,5 +74,12 @@ public class Medico extends Usuario {
     public String toString() {
         return super.toString() + " | Medico [matricula=" + matricula + ", especialidad=" + especialidad + "]";
     }	
-
+	
+	@Override
+    public void mostrarMenu() {
+        javax.swing.JOptionPane.showMessageDialog(null,
+            "MENÚ MÉDICO \n1) Registrar disponibilidad \n2) Confirmar asistencia \n3) Salir");
+    }
 }
+
+
