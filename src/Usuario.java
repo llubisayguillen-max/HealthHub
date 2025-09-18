@@ -1,11 +1,10 @@
 public class Usuario { 
+	
     private String nombre;
     private String apellido;
     private String usuario;
     private String contrasenia;
-    private String login;
-    private String logout;
-
+    
     public Usuario(String nombre, String apellido, String usuario, String contrasenia) {
         this.nombre = nombre;
         this.apellido = apellido;
@@ -45,20 +44,18 @@ public class Usuario {
         this.contrasenia = contrasenia;
     }
 
-    // METODOS
-    public String getLogin() {
-        return login;
+    
+ // AGREGADO
+    public boolean login() {          
+        return true;
     }
 
-    public void setLogin(String login) {
-        this.login = login;
+    public boolean logout() {       
+        return true;
     }
 
-    public String getLogout() {
-        return logout;
-    }
-
-    public void setLogout(String logout) {
-        this.logout = logout;
+    @Override
+    public String toString() {        
+        return "Nombre=" + nombre + ". /nApellido=" + apellido + ". /nUsuario=" + usuario + ".";
     }
 }
