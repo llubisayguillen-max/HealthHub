@@ -47,7 +47,7 @@ public class HistorialMedico {
 	}
 
 	public void agregarHistoria() {
-		System.out.println("Agregando historia médica.");
+		System.out.println("Agregando historial médico.");
 	}
 
 	@Override
