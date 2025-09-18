@@ -1,6 +1,4 @@
-
-
-public class Administrador extends Usuario{
+public class Administrador extends Usuario { 
     private String sector;
 
     public Administrador(String nombre, String apellido, String usuario, String contrasenia, String sector) {
@@ -16,30 +14,41 @@ public class Administrador extends Usuario{
         this.sector = sector;
     }
     
-    public void altaPaciente(){
+    // METODOS
+    public void altaPaciente() {
+    	
     }
     
-    public void altaMedico(){
+    public void altaMedico() {
+
     }
     
     public void bajaPaciente() {
+
     }
     
     public void bajaMedico() {
+
     }
     
-    public void gestionRol() {
+    public String gestionRol() {
+        return "Rol gestionado";
     }
     
     public void crearHistoriaMedica() {
+
     }
     
-    public void bloquearUsr() {
+    public boolean bloquearUsr() {
+        return true; 
     }
     
-    public void desbloquearUsr() {
+    public boolean desbloquearUsr() {
+
+        return true; 
     }
     
-    public void resetContrasenia() {
+    public String resetContrasenia() {
+        return "NuevaContraseña123";
     }
 }
