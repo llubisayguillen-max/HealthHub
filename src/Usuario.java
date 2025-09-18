@@ -3,8 +3,6 @@ public class Usuario {
     private String apellido;
     private String usuario;
     private String contrasenia;
-    private String login;
-    private String logout;
 
     public Usuario(String nombre, String apellido, String usuario, String contrasenia) {
         this.nombre = nombre;
@@ -45,20 +43,18 @@ public class Usuario {
         this.contrasenia = contrasenia;
     }
 
-    // METODOS
-    public String getLogin() {
-        return login;
+   
+    public boolean login(String usuario, String contrasenia) {
+        return this.usuario.equals(usuario) && this.contrasenia.equals(contrasenia);
     }
 
-    public void setLogin(String login) {
-        this.login = login;
+    public boolean logout() {
+        
+        return true;
     }
 
-    public String getLogout() {
-        return logout;
-    }
-
-    public void setLogout(String logout) {
-        this.logout = logout;
+    @Override
+    public String toString() {
+        return "Usuario [nombre=" + nombre + ", apellido=" + apellido + ", usuario=" + usuario + "]";
     }
 }
