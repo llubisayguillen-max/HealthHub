@@ -1,5 +1,7 @@
-public class Paciente extends Usuario {
- 
+import javax.swing.JOptionPane;
+
+public class Paciente extends Usuario implements Menu {
+
 	private int nroContrato;
 	private String obraSocial;
 	private HistorialMedico historial;
@@ -11,8 +13,7 @@ public class Paciente extends Usuario {
 		this.obraSocial = obraSocial;
 		this.historial = historial;
 	}
-	
-	
+
 	public int getNroContrato() {
 		return nroContrato;
 	}
@@ -38,26 +39,54 @@ public class Paciente extends Usuario {
 	}
 
 	public void reservarTurno() {
-		System.out.println("Turno reservado.");
+		JOptionPane.showMessageDialog(null, "Turno reservado.");
 	}
 
 	public void cancelarTurno() {
-		System.out.println("Turno cancelado.");
+		JOptionPane.showMessageDialog(null, "Turno cancelado.");
 	}
 
 	public void consultarTurno() {
-		System.out.println("Consultando sobre el turno.");
+		System.out.println("Consultando el turno.");
 	}
 
 	public void verResultado() {
-		System.out.println("Visualizando los resultados.");
+		JOptionPane.showMessageDialog(null, "Visualizando los resultados.");
 	}
 
-	
+	// Menú
+	@Override
+	public void MostrarMenu() {
+		String[] opciones = { "Reservar turno", "Cancelar turno", "Consultar turno", "Ver historial médico", "Salir" };
+		int elegido;
+		do {
+			elegido = JOptionPane.showOptionDialog(null, "Elija opción", "Paciente", 0, 0, null, opciones, opciones[0]);
+
+			switch (elegido) {
+			case 0:
+				reservarTurno();
+				break;
+			case 1:
+				cancelarTurno();
+				break;
+			case 2:
+				consultarTurno();
+				break;
+			case 3:
+				verResultado();
+				break;
+			case 4:
+				JOptionPane.showMessageDialog(null, "Saliendo...");
+				break;
+			default:
+				JOptionPane.showMessageDialog(null, "Opción inválida.");
+			}
+		} while (elegido != 4);
+	}
+
 	@Override
 	public String toString() {
-		return super.toString() + "Paciente nro. de Contrato:" + nroContrato + ", obraSocial:" + obraSocial + ".";
+		return super.toString() + "Paciente nro. de contrato=" + nroContrato + ", obra social=" + obraSocial + ".";
 	}
+
 }
-
-

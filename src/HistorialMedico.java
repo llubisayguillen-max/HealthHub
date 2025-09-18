@@ -1,7 +1,7 @@
 import java.util.Date;
 
 public class HistorialMedico {
-	
+
 	private int id;
 	private Date fechaCreacion;
 	private String observaciones;
@@ -13,8 +13,7 @@ public class HistorialMedico {
 		this.observaciones = observaciones;
 		this.archivos = archivos;
 	}
-	
-	
+
 	public int getId() {
 		return id;
 	}
@@ -47,15 +46,13 @@ public class HistorialMedico {
 		this.archivos = archivos;
 	}
 
-	public void agregarHistorial() {
-		System.out.println("Agregando historial médico.");
+	public void agregarHistoria() {
+		System.out.println("Agregando al historial médico.");
 	}
 
-	
 	@Override
 	public String toString() {
-		return "Historial Médico: \nId=" + id + "\nFecha de creación=" + fechaCreacion + "\nObservaciones="
+		return "HISTORIAL MÉDICO: \nId=" + id + "\nFecha de creación=" + fechaCreacion + "\nObservaciones="
 				+ observaciones;
 	}
 }
-
