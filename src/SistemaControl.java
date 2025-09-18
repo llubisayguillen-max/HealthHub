@@ -1,15 +1,10 @@
 package SistemaControl;
 
 import javax.swing.*;
+
+
 import java.util.ArrayList;
 import java.util.List;
-
-
-import SistemaControl.Usuario;
-import SistemaControl.Paciente;
-import SistemaControl.Medico;
-import SistemaControl.Administrador;
-import SistemaControl.Turnos;
 
 public class SistemaControl {
     private static SistemaControl instancia;
@@ -52,9 +47,11 @@ public class SistemaControl {
         SistemaControl sistema = SistemaControl.getInstancia();
 
         
-        Administrador admin = new Administrador("Ana", "Admin", "admin", "1234");
-        Paciente paciente = new Paciente("Juan", "Pérez", "juan", "abcd", "12345678");
-        Medico medico = new Medico("Laura", "Gómez", "laura", "med1", "Clínica General");
+        Administrador admin = new Administrador("Ana", "Perez", "admin", "1234", "admin@example.com");
+        
+        HistorialMedico historial = new HistorialMedico(1, new java.util.Date(), "Sin antecedentes", new String[] {}); 
+        Paciente paciente = new Paciente("Juan", "Pérez", "juan", "abcd", 12345678, "ObraSocialEjemplo", historial);
+        Medico medico = new Medico("Laura", "Gómez", "laura", "med1", 1, "Clínica General");
 
         sistema.agregarUsuario(admin);
         sistema.agregarUsuario(paciente);
