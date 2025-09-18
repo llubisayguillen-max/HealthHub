@@ -47,12 +47,12 @@ public class HistorialMedico {
 	}
 
 	public void agregarHistoria() {
-		System.out.println("Agregando historial médico.");
+		System.out.println("Agregando al historial médico.");
 	}
 
 	@Override
 	public String toString() {
-		return "Historial Médico: \nId=" + id + "\nFecha de creación=" + fechaCreacion + "\nObservaciones="
+		return "HISTORIAL MÉDICO: \nId=" + id + "\nFecha de creación=" + fechaCreacion + "\nObservaciones="
 				+ observaciones;
 	}
 }
