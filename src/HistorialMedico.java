@@ -1,18 +1,27 @@
+import java.time.LocalDate;
 import java.util.Date;
+
+
 
 public class HistorialMedico {
 
 	private int id;
-	private Date fechaCreacion;
+	private LocalDate fechaCreacion;
 	private String observaciones;
 	private String[] archivos;
 
-	public HistorialMedico(int id, Date fechaCreacion, String observaciones, String[] archivos) {
+	public HistorialMedico(int id, LocalDate date, String observaciones, String[] archivos) {
 		this.id = id;
-		this.fechaCreacion = fechaCreacion;
+		this.fechaCreacion = date;
 		this.observaciones = observaciones;
 		this.archivos = archivos;
 	}
+
+
+	public HistorialMedico(int id2, Date date, String observaciones2, String[] archivos2) {
+		// TODO Auto-generated constructor stub
+	}
+
 
 	public int getId() {
 		return id;
@@ -22,11 +31,11 @@ public class HistorialMedico {
 		this.id = id;
 	}
 
-	public Date getFechaCreacion() {
+	public LocalDate getFechaCreacion() {
 		return fechaCreacion;
 	}
 
-	public void setFechaCreacion(Date fechaCreacion) {
+	public void setFechaCreacion(LocalDate fechaCreacion) {
 		this.fechaCreacion = fechaCreacion;
 	}
 
