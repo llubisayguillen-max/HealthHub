@@ -1,15 +1,14 @@
 
-import java.util.Date;
+import java.time.LocalDate;
 
 public class Consulta {
 	
 	private String motivo;
 	private String diagnostico;
 	private String tratamiento;
-	private Date fecha;
+	private LocalDate fecha;	
 	
-	
-	public Consulta(String motivo, String diagnostico, String tratamiento, Date fecha) {
+	public Consulta(String motivo, String diagnostico, String tratamiento, LocalDate fecha) {
 		super();
 		this.motivo = motivo;
 		this.diagnostico = diagnostico;
@@ -34,12 +33,11 @@ public class Consulta {
 	public void setTratamiento(String tratamiento) {
 		this.tratamiento = tratamiento;
 	}
-	public Date getFecha() {
+	public LocalDate getFecha() {
 		return fecha;
 	}
-	public void setFecha(Date fecha) {
+	public void setFecha(LocalDate fecha) {
 		this.fecha = fecha;
-	}	
-	
+	}		
 
 }
