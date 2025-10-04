@@ -1,0 +1,49 @@
+import java.util.Scanner;
+import java.util.ArrayList;
+
+public class ClinicaApp {
+    // Listas para almacenar datos
+    static ArrayList<String> usuarios = new ArrayList<>();
+    static ArrayList<String> pacientes = new ArrayList<>();
+    static ArrayList<String> medicos = new ArrayList<>();
+    static ArrayList<String> turnos = new ArrayList<>();
+
+    public static void main(String[] args) {
+        inicializarDatos();
+
+        Scanner sc = new Scanner(System.in);
+        int opcion;
+
+        do {
+            System.out.println("\n--- SISTEMA CLÍNICA ---");
+            System.out.println("1. Listar usuarios");
+            System.out.println("2. Listar pacientes");
+            System.out.println("3. Listar médicos");
+            System.out.println("4. Reservar turno");
+            System.out.println("5. Listar turnos");
+            System.out.println("0. Salir");
+            System.out.print("Ingrese una opción: ");
+            opcion = sc.nextInt();
+
+            switch (opcion) {
+                case 1 -> listarUsuarios();
+                case 2 -> listarPacientes();
+                case 3 -> listarMedicos();
+                case 4 -> reservarTurno(sc);
+                case 5 -> listarTurnos();
+                case 0 -> System.out.println("Saliendo...");
+                default -> System.out.println("Opción inválida.");
+            }
+        } while (opcion != 0);
+
+        sc.close();
+    }
+
+    // Métodos vacíos de ejemplo
+    static void inicializarDatos() {}
+    static void listarUsuarios() {}
+    static void listarPacientes() {}
+    static void listarMedicos() {}
+    static void reservarTurno(Scanner sc) {}
+    static void listarTurnos() {}
+}
