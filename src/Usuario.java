@@ -3,12 +3,14 @@ public class Usuario {
     private String apellido;
     private String usuario;
     private String contrasenia;
+    private boolean sesionIniciada;
 
     public Usuario(String nombre, String apellido, String usuario, String contrasenia) {
         this.nombre = nombre;
         this.apellido = apellido;
         this.usuario = usuario;
         this.contrasenia = contrasenia;
+        this.sesionIniciada = false;
     }
 
     public String getNombre() {
@@ -44,17 +46,32 @@ public class Usuario {
     }
 
    
+    public boolean isSesionIniciada() {
+        return sesionIniciada;
+    }
+
     public boolean login(String usuario, String contrasenia) {
-        return this.usuario.equals(usuario) && this.contrasenia.equals(contrasenia);
+        if (this.usuario.equals(usuario) && this.contrasenia.equals(contrasenia)) {
+            sesionIniciada = true;
+            return true;
+        }
+        return false;
     }
 
     public boolean logout() {
-        
-        return true;
+        if (sesionIniciada) {
+            sesionIniciada = false;
+            return true;
+        }
+        return false;
     }
 
     @Override
     public String toString() {
-        return "Usuario: nombre=" + nombre + ", apellido=" + apellido + ", usuario=" + usuario + ".";
+        return "Usuario: " + nombre + " " + apellido + " (" + usuario + ")";
+    }
+
+    public String getRol() {
+        return "Usuario genérico";
     }
 }
