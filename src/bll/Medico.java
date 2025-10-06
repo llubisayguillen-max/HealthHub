@@ -57,31 +57,44 @@ public class Medico extends Usuario implements Menu {
 	public void modificarDisponibilidad(int dia, String nuevoHorario) {
 		this.disponibilidadSemanal[dia] = nuevoHorario;
 	}
+	
+	public void visualizarAgenda() {
+        System.out.println("Agenda del médico " + getNombre() + " " + getApellido() + ":");
+        for (Turno t : agenda) {
+            if (t != null)
+                System.out.println(t);
+        }
+    }
 
 	public void registrarConsulta(Turno turno, Consulta consulta) {
-		Paciente p = turno.getPaciente();
-		if (p != null && p.getHistorial() != null) {
-			String obs = p.getHistorial().getObservaciones();
-			String nueva = (obs == null ? "" : obs + "\n") + "Consulta [" + consulta.getFecha() + "]: "
-					+ consulta.getMotivo();
-			p.getHistorial().setObservaciones(nueva);
-		}
-		System.out.println("Consulta registrada: " + consulta.getMotivo());
-	}
+        Paciente p = turno.getPaciente();
+        if (p != null && p.getHistorial() != null) {
+            String obs = p.getHistorial().getObservaciones();
+            String nueva = (obs == null ? "" : obs + "\n") + 
+                    "Consulta [" + consulta.getFecha() + "]: " +
+                    "\nMotivo: " + consulta.getMotivo() +
+                    "\nDiagnóstico: " + consulta.getDiagnostico() +
+                    "\nTratamiento: " + consulta.getTratamiento() +
+                    "\nSeguimiento: " + consulta.getSeguimiento();
+            p.getHistorial().setObservaciones(nueva);
+        }
+        System.out.println("Consulta registrada para " + p.getNombre());
+    }
 
 	public void confirmarAsistencia(Turno turno) {
-		turno.confirmarAsistencia();
-	}
+        turno.confirmarAsistencia();
+        System.out.println("Asistencia confirmada para: " + turno.getPaciente().getNombre());
+    }
 
-	@Override
-	public String toString() {
-		return super.toString() + " | Medico [matricula=" + matricula + ", especialidad=" + especialidad + "]";
-	}
-
-	@Override
 	public void MostrarMenu() {
-		JOptionPane.showMessageDialog(null,
-				"MENÚ MÉDICO \n1) Registrar disponibilidad \n2) Confirmar asistencia \n3) Salir");
-	}
+        JOptionPane.showMessageDialog(null,
+                "MENÚ MÉDICO \n1) Iniciar sesión \n2) Registrar disponibilidad \n3) Modificar disponibilidad " +
+                "\n4) Visualizar agenda \n5) Confirmar asistencia \n6) Registrar consulta " +
+                " \n10) Salir");
+    }
 
+    @Override
+    public String toString() {
+        return super.toString() + " | Medico [matricula=" + matricula + ", especialidad=" + especialidad + "]";
+    }
 }
