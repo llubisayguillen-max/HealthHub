@@ -1,3 +1,5 @@
+package bll;
+
 import javax.swing.JOptionPane;
 
 public class Medico extends Usuario implements Menu {
@@ -6,7 +8,7 @@ public class Medico extends Usuario implements Menu {
 	private String especialidad;
 	private String[] disponibilidadSemanal;
 	private Turno[] agenda;
-	
+
 	public Medico(String nombre, String apellido, String usuario, String contrasenia, int matricula,
 			String especialidad) {
 		super(nombre, apellido, usuario, contrasenia);
@@ -47,41 +49,39 @@ public class Medico extends Usuario implements Menu {
 	public void setAgenda(Turno[] agenda) {
 		this.agenda = agenda;
 	}
-	
+
 	public void registrarDisponibilidad(int dia, String horario) {
 		this.disponibilidadSemanal[dia] = horario;
 	}
-	
+
 	public void modificarDisponibilidad(int dia, String nuevoHorario) {
 		this.disponibilidadSemanal[dia] = nuevoHorario;
 	}
-	
-	public void registrarConsulta(Turno turno, Consulta consulta) {        
-        Paciente p = turno.getPaciente();
-        if (p != null && p.getHistorial() != null) {
-            String obs = p.getHistorial().getObservaciones();
-            String nueva = (obs == null ? "" : obs + "\n") +
-                           "Consulta [" + consulta.getFecha() + "]: " + consulta.getMotivo();
-            p.getHistorial().setObservaciones(nueva);
-        }
-        System.out.println("Consulta registrada: " + consulta.getMotivo());
-    }
-	
+
+	public void registrarConsulta(Turno turno, Consulta consulta) {
+		Paciente p = turno.getPaciente();
+		if (p != null && p.getHistorial() != null) {
+			String obs = p.getHistorial().getObservaciones();
+			String nueva = (obs == null ? "" : obs + "\n") + "Consulta [" + consulta.getFecha() + "]: "
+					+ consulta.getMotivo();
+			p.getHistorial().setObservaciones(nueva);
+		}
+		System.out.println("Consulta registrada: " + consulta.getMotivo());
+	}
+
 	public void confirmarAsistencia(Turno turno) {
-        turno.confirmarAsistencia();
-    }
-	
+		turno.confirmarAsistencia();
+	}
+
 	@Override
-    public String toString() {
-        return super.toString() + " | Medico [matricula=" + matricula + ", especialidad=" + especialidad + "]";
-    }	
-	
+	public String toString() {
+		return super.toString() + " | Medico [matricula=" + matricula + ", especialidad=" + especialidad + "]";
+	}
+
 	@Override
-    public void MostrarMenu() {
-        JOptionPane.showMessageDialog(null,
-            "MENÚ MÉDICO \n1) Registrar disponibilidad \n2) Confirmar asistencia \n3) Salir");
-    }
-	
+	public void MostrarMenu() {
+		JOptionPane.showMessageDialog(null,
+				"MENÚ MÉDICO \n1) Registrar disponibilidad \n2) Confirmar asistencia \n3) Salir");
+	}
+
 }
-
-

@@ -1,7 +1,7 @@
+package bll;
+
 import java.time.LocalDate;
 import java.util.Date;
-
-
 
 public class HistorialMedico {
 
@@ -17,11 +17,9 @@ public class HistorialMedico {
 		this.archivos = archivos;
 	}
 
-
 	public HistorialMedico(int id2, Date date, String observaciones2, String[] archivos2) {
 		// TODO Auto-generated constructor stub
 	}
-
 
 	public int getId() {
 		return id;

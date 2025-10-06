@@ -1,3 +1,5 @@
+package bll;
+
 import javax.swing.JOptionPane;
 
 public class Paciente extends Usuario implements Menu {
