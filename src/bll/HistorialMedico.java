@@ -1,6 +1,7 @@
 package bll;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.Date;
 
 public class HistorialMedico {
@@ -10,15 +11,22 @@ public class HistorialMedico {
 	private String observaciones;
 	private String[] archivos;
 
-	public HistorialMedico(int id, LocalDate date, String observaciones, String[] archivos) {
+	public HistorialMedico(int id, LocalDate fechaCreacion, String observaciones, String[] archivos) {
 		this.id = id;
-		this.fechaCreacion = date;
+		this.fechaCreacion = fechaCreacion;
 		this.observaciones = observaciones;
-		this.archivos = archivos;
+		this.archivos = archivos != null ? archivos : new String[0];
 	}
 
-	public HistorialMedico(int id2, Date date, String observaciones2, String[] archivos2) {
-		// TODO Auto-generated constructor stub
+	public HistorialMedico(int id, Date fecha, String observaciones, String[] archivos) {
+		this.id = id;
+		if (fecha != null) {
+			this.fechaCreacion = new java.sql.Date(fecha.getTime()).toLocalDate();
+		} else {
+			this.fechaCreacion = LocalDate.now();
+		}
+		this.observaciones = observaciones;
+		this.archivos = archivos != null ? archivos : new String[0];
 	}
 
 	public int getId() {
@@ -50,16 +58,31 @@ public class HistorialMedico {
 	}
 
 	public void setArchivos(String[] archivos) {
-		this.archivos = archivos;
+		this.archivos = archivos != null ? archivos : new String[0];
 	}
 
-	public void agregarHistoria() {
-		System.out.println("Agregando al historial médico.");
+	// Método para agregar archivos
+	public void agregarArchivo(String archivo) {
+		if (archivo != null && !archivo.isEmpty()) {
+			String[] nuevos = Arrays.copyOf(archivos, archivos.length + 1);
+			nuevos[nuevos.length - 1] = archivo;
+			archivos = nuevos;
+		}
 	}
 
 	@Override
 	public String toString() {
-		return "HISTORIAL MÉDICO: \nId=" + id + "\nFecha de creación=" + fechaCreacion + "\nObservaciones="
-				+ observaciones;
+		StringBuilder sb = new StringBuilder();
+		sb.append("ID: ").append(id).append("\n");
+		sb.append("Fecha de creación: ").append(fechaCreacion).append("\n");
+		sb.append("Observaciones: ").append(observaciones).append("\n");
+		if (archivos.length > 0) {
+			sb.append("Archivos:\n");
+			for (String a : archivos)
+				sb.append("- ").append(a).append("\n");
+		} else {
+			sb.append("Archivos: ninguno\n");
+		}
+		return sb.toString();
 	}
 }
