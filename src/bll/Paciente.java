@@ -1,12 +1,15 @@
 package bll;
 
-import javax.swing.JOptionPane;
+import javax.swing.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Paciente extends Usuario implements Menu {
 
 	private int nroContrato;
 	private String obraSocial;
 	private HistorialMedico historial;
+	private List<Medico> favoritos;
 
 	public Paciente(String nombre, String apellido, String usuario, String contrasenia, int nroContrato,
 			String obraSocial, HistorialMedico historial) {
@@ -14,6 +17,7 @@ public class Paciente extends Usuario implements Menu {
 		this.nroContrato = nroContrato;
 		this.obraSocial = obraSocial;
 		this.historial = historial;
+		this.favoritos = new ArrayList<>();
 	}
 
 	public int getNroContrato() {
@@ -40,55 +44,88 @@ public class Paciente extends Usuario implements Menu {
 		this.historial = historial;
 	}
 
-	public void reservarTurno() {
-		JOptionPane.showMessageDialog(null, "Turno reservado.");
+	public List<Medico> getFavoritos() {
+		return favoritos;
 	}
 
-	public void cancelarTurno() {
-		JOptionPane.showMessageDialog(null, "Turno cancelado.");
+	public void reservarTurno(Medico m, String horario) {
+		JOptionPane.showMessageDialog(null, "Turno reservado con " + m.getNombre() + " a las " + horario);
 	}
 
-	public void consultarTurno() {
-		System.out.println("Consultando el turno.");
+	public void cancelarTurno(Medico m, String horario) {
+		JOptionPane.showMessageDialog(null, "Turno cancelado con " + m.getNombre() + " a las " + horario);
 	}
 
 	public void verResultado() {
-		JOptionPane.showMessageDialog(null, "Visualizando los resultados.");
+		if (historial != null) {
+			JOptionPane.showMessageDialog(null, historial.toString());
+		} else {
+			JOptionPane.showMessageDialog(null, "No hay resultados disponibles.");
+		}
 	}
 
-	// Menú
+	public void recibirRecomendaciones() {
+		JOptionPane.showMessageDialog(null, "Recomendaciones para obra social: " + obraSocial);
+	}
+
+	public void agregarFavorito(Medico m) {
+		if (!favoritos.contains(m)) {
+			favoritos.add(m);
+			JOptionPane.showMessageDialog(null, m.getNombre() + " agregado a favoritos.");
+		} else {
+			JOptionPane.showMessageDialog(null, m.getNombre() + " ya está en favoritos.");
+		}
+	}
+
+	public void verFavoritos() {
+		if (favoritos.isEmpty()) {
+			JOptionPane.showMessageDialog(null, "No tenes médicos favoritos.");
+		} else {
+			StringBuilder sb = new StringBuilder("Médicos favoritos:\n");
+			for (Medico m : favoritos)
+				sb.append(m.getNombre()).append(" - ").append(m.getEspecialidad()).append("\n");
+			JOptionPane.showMessageDialog(null, sb.toString());
+		}
+	}
+
 	@Override
 	public void MostrarMenu() {
-		String[] opciones = { "Reservar turno", "Cancelar turno", "Consultar turno", "Ver historial médico", "Salir" };
+		String[] opciones = { "Reservar turno", "Cancelar turno", "Consultar turno", "Ver historial médico",
+				"Ver favoritos", "Recibir recomendaciones", "Salir" };
 		int elegido;
 		do {
 			elegido = JOptionPane.showOptionDialog(null, "Elija opción", "Paciente", 0, 0, null, opciones, opciones[0]);
-
 			switch (elegido) {
 			case 0:
-				reservarTurno();
+				JOptionPane.showMessageDialog(null, "Reservar turno");
 				break;
 			case 1:
-				cancelarTurno();
+				JOptionPane.showMessageDialog(null, "Cancelar turno");
 				break;
 			case 2:
-				consultarTurno();
+				JOptionPane.showMessageDialog(null, "Consultar turno");
 				break;
 			case 3:
 				verResultado();
 				break;
 			case 4:
+				verFavoritos();
+				break;
+			case 5:
+				recibirRecomendaciones();
+				break;
+			case 6:
 				JOptionPane.showMessageDialog(null, "Saliendo...");
 				break;
 			default:
 				JOptionPane.showMessageDialog(null, "Opción inválida.");
+				break;
 			}
-		} while (elegido != 4);
+		} while (elegido != 6);
 	}
 
 	@Override
 	public String toString() {
-		return super.toString() + "Paciente nro. de contrato=" + nroContrato + ", obra social=" + obraSocial + ".";
+		return super.toString() + " Paciente nro. de contrato=" + nroContrato + ", obra social=" + obraSocial + ".";
 	}
-
 }
