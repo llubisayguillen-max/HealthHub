@@ -63,13 +63,12 @@ public class HistorialMedico {
 
 	// Método para agregar archivos
 	public void agregarArchivo(String archivo) {
-		if (archivo != null && !archivo.isEmpty()) {
-			String[] nuevos = Arrays.copyOf(archivos, archivos.length + 1);
-			nuevos[nuevos.length - 1] = archivo;
-			archivos = nuevos;
-		}
+	    if (archivo != null && !archivo.isEmpty()) {
+	        archivos = Arrays.copyOf(archivos, archivos.length + 1);
+	        archivos[archivos.length - 1] = archivo;
+	    }
 	}
-
+	
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
