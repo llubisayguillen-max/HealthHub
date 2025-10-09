@@ -10,6 +10,7 @@ public class Paciente extends Usuario implements Menu {
 	private String obraSocial;
 	private HistorialMedico historial;
 	private List<Medico> favoritos;
+	private List<Turno> turnos; 
 
 	public Paciente(String nombre, String apellido, String usuario, String contrasenia, int nroContrato,
 			String obraSocial, HistorialMedico historial) {
@@ -18,6 +19,7 @@ public class Paciente extends Usuario implements Menu {
 		this.obraSocial = obraSocial;
 		this.historial = historial;
 		this.favoritos = new ArrayList<>();
+		this.turnos = new ArrayList<>(); 
 	}
 
 	public int getNroContrato() {
@@ -57,10 +59,11 @@ public class Paciente extends Usuario implements Menu {
 	}
 
 	public void verResultado() {
-		if (historial != null) {
-			JOptionPane.showMessageDialog(null, historial.toString());
+		if (historial != null && historial.getObservaciones() != null) {
+			JOptionPane.showMessageDialog(null, "Historial Médico:\n" + historial.toString(), "Resultados",
+					JOptionPane.INFORMATION_MESSAGE);
 		} else {
-			JOptionPane.showMessageDialog(null, "No hay resultados disponibles.");
+			JOptionPane.showMessageDialog(null, "No hay resultados disponibles en tu historial médico.");
 		}
 	}
 
@@ -127,5 +130,33 @@ public class Paciente extends Usuario implements Menu {
 	@Override
 	public String toString() {
 		return super.toString() + " Paciente nro. de contrato=" + nroContrato + ", obra social=" + obraSocial + ".";
+	}
+
+	
+	// -----------------------------------------------------------
+	// Métodos para el ControllerPaciente:
+
+	public String getEmail() {
+		return getUsuario();
+	}
+
+	public String getPassword() {
+		return getContrasenia();
+	}
+
+	public HistorialMedico getHistorialMedico() {
+		return historial;
+	}
+
+	public List<Turno> getTurnos() {
+		return turnos;
+	}
+
+	public void agregarTurno(Turno turno) {
+		turnos.add(turno);
+	}
+
+	public void cancelarTurno(Turno turno) {
+		turnos.remove(turno);
 	}
 }
