@@ -95,6 +95,28 @@ public class ControllerMedico {
 		return list;
 	}
 
+	// turnos disponibles en el dia
+	public List<String> turnosDelDia(java.sql.Date dia) {
+		String sql = "SELECT t.id, t.fecha, t.hora, t.estado, up.usuario_login AS paciente " + "FROM turnos t "
+				+ "JOIN medicos m ON m.id = t.id_medico " + "JOIN usuarios um ON um.id_usuario = m.id_usuario "
+				+ "JOIN pacientes p ON p.id = t.id_paciente " + "JOIN usuarios up ON up.id_usuario = p.id_usuario "
+				+ "WHERE um.usuario_login=? AND t.fecha=? " + "ORDER BY t.hora";
+		List<String> list = new ArrayList<>();
+		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+			ps.setString(1, medico.getUsuario());
+			ps.setDate(2, dia); // OJO: java.sql.Date
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					list.add("#" + rs.getLong("id") + " | " + rs.getDate("fecha") + " " + rs.getTime("hora") + " | "
+							+ rs.getString("estado") + " | Paciente: " + rs.getString("paciente"));
+				}
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException("Error listando turnos del día", e);
+		}
+		return list;
+	}
+
 	// agenda del medico
 	public List<Date> visualizarAgenda(java.sql.Date desde, java.sql.Date hasta) {
 		String sql = "SELECT t.fecha, t.hora " + "FROM turnos t " + "JOIN medicos m ON m.id = t.id_medico "
@@ -113,7 +135,8 @@ public class ControllerMedico {
 		} catch (SQLException e) {
 			throw new RuntimeException("Error visualizando agenda", e);
 		}
-		return agenda;	}
+		return agenda;
+	}
 
 	public void confirmarAsistencia(long idTurno) {
 		String sql = "UPDATE turnos SET estado='Confirmado' WHERE id=?";
