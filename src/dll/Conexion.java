@@ -20,7 +20,7 @@ public class Conexion {
 			conect = (Connection) DriverManager.getConnection(URL, USER, PASSWORD);
 			System.out.println("Se conectó");
 		} catch (SQLException e) {
-			System.out.println("No se conectó");
+			System.out.println("No se conectó: " + e.getMessage());
 		}
 	}
 
