@@ -1,173 +1,182 @@
 package dll;
 
-import bll.Administrador;
-import bll.Paciente;
-import bll.Medico;
-import bll.HistorialMedico;
+import bll.Usuario;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ControllerAdministrador {
 
-    private final Administrador admin;
+    private final Usuario admin;
 
-    public ControllerAdministrador(Administrador admin) {
+    public ControllerAdministrador(Usuario admin) {
         this.admin = admin;
     }
 
-    // Alta de paciente
-    public long altaPaciente(Paciente p) {
-        String sqlUsuario = "INSERT INTO usuarios(nombre, apellido, usuario_login, contrasenia, rol) VALUES (?, ?, ?, ?, 'Paciente')";
-        String sqlPaciente = "INSERT INTO pacientes(dni, obra_social, id_usuario) VALUES (?, ?, ?)";
+    // ================= REGISTRAR PACIENTE =================
+    public void registrarPaciente(String usuario, String nombre, String apellido, String contrasenia,
+                                  int nroContrato, String obraSocial) {
+        String sqlUsuario = "INSERT INTO usuarios(usuario_login, contrasenia, nombre, apellido, rol) VALUES (?, ?, ?, ?, 'Paciente')";
+        String sqlPaciente = "INSERT INTO pacientes(id_usuario, nro_contrato, obra_social) VALUES (?, ?, ?)";
+
         try (Connection c = Conexion.getInstance().getConnection();
-             PreparedStatement psUser = c.prepareStatement(sqlUsuario, Statement.RETURN_GENERATED_KEYS);
+             PreparedStatement psUser = c.prepareStatement(sqlUsuario, Statement.RETURN_GENERATED_KEYS)) {
+
+            // Insertar en usuarios
+            psUser.setString(1, usuario);
+            psUser.setString(2, apellido);
+            psUser.setString(3, nombre);
+            psUser.setString(4,  contrasenia);
+            psUser.executeUpdate();
+
+            long idUsuario;
+            try (ResultSet keys = psUser.getGeneratedKeys()) {
+                if (keys.next()) {
+                    idUsuario = keys.getLong(1);
+                } else {
+                    throw new SQLException("No se pudo obtener id_usuario");
+                }
+            }
+
+            // Insertar en pacientes
+            try (PreparedStatement psPac = c.prepareStatement(sqlPaciente)) {
+                psPac.setLong(1, idUsuario);
+                psPac.setInt(2, nroContrato);
+                psPac.setString(3, obraSocial);
+                psPac.executeUpdate();
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Error registrando paciente", e);
+        }
+    }
+
+    // ================= MODIFICAR PACIENTE =================
+    public void modificarPaciente(String usuario, String nombre, String apellido, String contrasenia,
+                                  int nroContrato, String obraSocial) {
+        String sqlUsuario = "UPDATE usuarios SET nombre=?, apellido=?, contrasenia=? WHERE usuario_login=?";
+        String sqlPaciente = "UPDATE pacientes SET nro_contrato=?, obra_social=? " +
+                             "WHERE id_usuario=(SELECT id_usuario FROM usuarios WHERE usuario_login=?)";
+
+        try (Connection c = Conexion.getInstance().getConnection();
+             PreparedStatement psUser = c.prepareStatement(sqlUsuario);
              PreparedStatement psPac = c.prepareStatement(sqlPaciente)) {
 
-            psUser.setString(1, p.getNombre());
-            psUser.setString(2, p.getApellido());
-            psUser.setString(3, p.getUsuario());
-            psUser.setString(4, p.getContrasenia());
+            psUser.setString(1, nombre);
+            psUser.setString(2, apellido);
+            psUser.setString(3, contrasenia);
+            psUser.setString(4, usuario);
             psUser.executeUpdate();
 
-            ResultSet rs = psUser.getGeneratedKeys();
-            if (rs.next()) {
-                long idUsuario = rs.getLong(1);
-                psPac.setInt(1, p.getDni());
-                psPac.setString(2, p.getObraSocial());
-                psPac.setLong(3, idUsuario);
-                psPac.executeUpdate();
-                return idUsuario;
-            }
+            psPac.setInt(1, nroContrato);
+            psPac.setString(2, obraSocial);
+            psPac.setString(3, usuario);
+            psPac.executeUpdate();
+
         } catch (SQLException e) {
-            throw new RuntimeException("Error al dar de alta paciente", e);
+            throw new RuntimeException("Error modificando paciente", e);
         }
-        return 0;
     }
 
-    // Alta de médico
-    public long altaMedico(Medico m) {
-        String sqlUsuario = "INSERT INTO usuarios(nombre, apellido, usuario_login, contrasenia, rol) VALUES (?, ?, ?, ?, 'Medico')";
-        String sqlMedico = "INSERT INTO medicos(id_medico, especialidad, id_usuario) VALUES (?, ?, ?)";
+    // ================= REGISTRAR MÉDICO =================
+    public void registrarMedico(String usuario, String nombre, String apellido, String contrasenia,
+                                String matricula, String especialidad) {
+        String sqlUsuario = "INSERT INTO usuarios(usuario_login, contrasenia, nombre, apellido, rol) VALUES (?, ?, ?, ?, 'Medico')";
+        String sqlMedico = "INSERT INTO medicos(id_usuario, matricula, especialidad) VALUES (?, ?, ?)";
+
         try (Connection c = Conexion.getInstance().getConnection();
-             PreparedStatement psUser = c.prepareStatement(sqlUsuario, Statement.RETURN_GENERATED_KEYS);
+             PreparedStatement psUser = c.prepareStatement(sqlUsuario, Statement.RETURN_GENERATED_KEYS)) {
+
+            // Insertar en usuarios
+            psUser.setString(1, usuario);
+            psUser.setString(2, contrasenia);
+            psUser.setString(3, nombre);
+            psUser.setString(4, apellido);
+            psUser.executeUpdate();
+
+            long idUsuario;
+            try (ResultSet keys = psUser.getGeneratedKeys()) {
+                if (keys.next()) {
+                    idUsuario = keys.getLong(1);
+                } else {
+                    throw new SQLException("No se pudo obtener id_usuario");
+                }
+            }
+
+            // Insertar en medicos
+            try (PreparedStatement psMed = c.prepareStatement(sqlMedico)) {
+                psMed.setLong(1, idUsuario);
+                psMed.setString(2, matricula);
+                psMed.setString(3, especialidad);
+                psMed.executeUpdate();
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Error registrando médico", e);
+        }
+    }
+
+    // ================= MODIFICAR MÉDICO =================
+    public void modificarMedico(String usuario, String nombre, String apellido, String contrasenia,
+                                String matricula, String especialidad) {
+        String sqlUsuario = "UPDATE usuarios SET nombre=?, apellido=?, contrasenia=? WHERE usuario_login=?";
+        String sqlMedico = "UPDATE medicos SET matricula=?, especialidad=? " +
+                           "WHERE id_usuario=(SELECT id_usuario FROM usuarios WHERE usuario_login=?)";
+
+        try (Connection c = Conexion.getInstance().getConnection();
+             PreparedStatement psUser = c.prepareStatement(sqlUsuario);
              PreparedStatement psMed = c.prepareStatement(sqlMedico)) {
 
-            psUser.setString(1, m.getNombre());
-            psUser.setString(2, m.getApellido());
-            psUser.setString(3, m.getUsuario());
-            psUser.setString(4, m.getContrasenia());
+            psUser.setString(1, nombre);
+            psUser.setString(2, apellido);
+            psUser.setString(3, contrasenia);
+            psUser.setString(4, usuario);
             psUser.executeUpdate();
 
-            ResultSet rs = psUser.getGeneratedKeys();
-            if (rs.next()) {
-                long idUsuario = rs.getLong(1);
-                psMed.setInt(1, m.getId());
-                psMed.setString(2, m.getEspecialidad());
-                psMed.setLong(3, idUsuario);
-                psMed.executeUpdate();
-                return idUsuario;
+            psMed.setString(1, matricula);
+            psMed.setString(2, especialidad);
+            psMed.setString(3, usuario);
+            psMed.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Error modificando médico", e);
+        }
+    }
+
+    // ================= ELIMINAR USUARIO =================
+    public void eliminarUsuario(String usuario) {
+        String sql = "DELETE FROM usuarios WHERE usuario_login=?";
+        try (Connection c = Conexion.getInstance().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, usuario);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error eliminando usuario", e);
+        }
+    }
+
+    // ================= LISTAR USUARIOS =================
+    public List<String> listarUsuariosPorRol(String rol) {
+        String sql = "SELECT usuario_login, nombre, apellido FROM usuarios WHERE rol=?";
+        List<String> list = new ArrayList<>();
+        try (Connection c = Conexion.getInstance().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+
+            ps.setString(1, rol);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String login = rs.getString("usuario_login");
+                    String nom = rs.getString("nombre");
+                    String ape = rs.getString("apellido");
+                    if (login != null) list.add(login + " | " + nom + " " + ape);
+                }
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error al dar de alta médico", e);
-        }
-        return 0;
-    }
-
-    // Baja de paciente
-    public void bajaPaciente(String username) {
-        String sql = "DELETE FROM pacientes WHERE id_usuario=(SELECT id_usuario FROM usuarios WHERE usuario_login=?)";
-        String sqlUser = "DELETE FROM usuarios WHERE usuario_login=?";
-        try (Connection c = Conexion.getInstance().getConnection();
-             PreparedStatement ps = c.prepareStatement(sql);
-             PreparedStatement psUser = c.prepareStatement(sqlUser)) {
-
-            ps.setString(1, username);
-            ps.executeUpdate();
-
-            psUser.setString(1, username);
-            psUser.executeUpdate();
 
         } catch (SQLException e) {
-            throw new RuntimeException("Error al eliminar paciente", e);
+            throw new RuntimeException("Error listando usuarios", e);
         }
+        return list;
     }
 
-    // Baja de médico
-    public void bajaMedico(String username) {
-        String sql = "DELETE FROM medicos WHERE id_usuario=(SELECT id_usuario FROM usuarios WHERE usuario_login=?)";
-        String sqlUser = "DELETE FROM usuarios WHERE usuario_login=?";
-        try (Connection c = Conexion.getInstance().getConnection();
-             PreparedStatement ps = c.prepareStatement(sql);
-             PreparedStatement psUser = c.prepareStatement(sqlUser)) {
-
-            ps.setString(1, username);
-            ps.executeUpdate();
-
-            psUser.setString(1, username);
-            psUser.executeUpdate();
-
-        } catch (SQLException e) {
-            throw new RuntimeException("Error al eliminar médico", e);
-        }
-    }
-
-    // Crear historia médica
-    public void crearHistoriaMedica(Paciente p, HistorialMedico h) {
-        String sql = "INSERT INTO historial_medico(id_paciente, fecha, diagnostico, observaciones) VALUES (?, ?, ?, ?)";
-        try (Connection c = Conexion.getInstance().getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
-            ps.setLong(1, p.getId());
-            ps.setDate(2, new java.sql.Date(h.getFecha().getTime()));
-            ps.setString(3, h.getDiagnostico());
-            ps.setString(4, String.join(",", h.getObservaciones())); // ejemplo de arreglo a string
-            ps.executeUpdate();
-
-        } catch (SQLException e) {
-            throw new RuntimeException("Error creando historia médica", e);
-        }
-    }
-
-    // Resetear contraseña
-    public void resetContrasenia(String username, String nuevaContrasenia) {
-        String sql = "UPDATE usuarios SET contrasenia=? WHERE usuario_login=?";
-        try (Connection c = Conexion.getInstance().getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
-            ps.setString(1, nuevaContrasenia);
-            ps.setString(2, username);
-            ps.executeUpdate();
-
-        } catch (SQLException e) {
-            throw new RuntimeException("Error reseteando contraseña", e);
-        }
-    }
-
-    // Bloquear usuario
-    public void bloquearUsr(String username) {
-        String sql = "UPDATE usuarios SET estado='Bloqueado' WHERE usuario_login=?";
-        try (Connection c = Conexion.getInstance().getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
-            ps.setString(1, username);
-            ps.executeUpdate();
-
-        } catch (SQLException e) {
-            throw new RuntimeException("Error bloqueando usuario", e);
-        }
-    }
-
-    // Desbloquear usuario
-    public void desbloquearUsr(String username) {
-        String sql = "UPDATE usuarios SET estado='Activo' WHERE usuario_login=?";
-        try (Connection c = Conexion.getInstance().getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
-            ps.setString(1, username);
-            ps.executeUpdate();
-
-        } catch (SQLException e) {
-            throw new RuntimeException("Error desbloqueando usuario", e);
-        }
-    }
 }

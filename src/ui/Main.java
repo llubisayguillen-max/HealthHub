@@ -1,6 +1,7 @@
 package ui;
 
 import bll.*;
+import dll.ControllerAdministrador;
 import dll.ControllerMedico;
 import dll.ControllerPaciente;
 import dll.ControllerUsuario;
@@ -395,11 +396,135 @@ public class Main {
 			} catch (Exception e) {
 				JOptionPane.showMessageDialog(null, "Error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 			}
-
-		} else if (u instanceof Administrador) {
-			JOptionPane.showMessageDialog(null, "En proceso");
 		}
 
-		JOptionPane.showMessageDialog(null, "Gracias por usar HealthHub!");
-	}
+		
+		
+		
+		else if (u instanceof Administrador a) {
+		    ControllerAdministrador ca = new ControllerAdministrador(a);
+		    String[] ops = {
+		        "Registrar paciente",
+		        "Modificar datos de paciente",
+		        "Registrar médico",
+		        "Modificar datos de médico",
+		        "Listar usuarios",
+		        "Eliminar usuario",
+		        "Salir"
+		    };
+
+		    boolean salir = false;
+		    while (!salir) {
+		        Object choice = JOptionPane.showInputDialog(
+		                null,
+		                "Menú Administrador",
+		                "Administrador",
+		                JOptionPane.PLAIN_MESSAGE,
+		                null,
+		                ops,
+		                ops[0]
+		        );
+
+		        if (choice == null || "Salir".equals(choice)) {
+		            salir = true;
+		            continue;
+		        }
+
+		        String op = choice.toString();
+
+		        try {
+		            switch (op) {
+		                case "Registrar paciente" -> {
+		                    String usr = JOptionPane.showInputDialog("Usuario:");
+		                    String nom = JOptionPane.showInputDialog("Nombre:");
+		                    String ape = JOptionPane.showInputDialog("Apellido:");
+		                    String pass = JOptionPane.showInputDialog("Contraseña:");
+		                    String nro = JOptionPane.showInputDialog("Número de contrato:");
+		                    String os = JOptionPane.showInputDialog("Obra social:");
+
+		                    if (usr != null && nom != null && ape != null && pass != null && nro != null && os != null) {
+		                        ca.registrarPaciente(usr.trim(), nom.trim(), ape.trim(), pass.trim(),
+		                                Integer.parseInt(nro.trim()), os.trim());
+		                        JOptionPane.showMessageDialog(null, "Paciente registrado exitosamente");
+		                    }
+		                }
+		                case "Modificar datos de paciente" -> {
+		                    String usr = JOptionPane.showInputDialog("Usuario del paciente a modificar:");
+		                    if (usr != null) {
+		                        String nom = JOptionPane.showInputDialog("Nuevo nombre:");
+		                        String ape = JOptionPane.showInputDialog("Nuevo apellido:");
+		                        String pass = JOptionPane.showInputDialog("Nueva contraseña:");
+		                        String nro = JOptionPane.showInputDialog("Nuevo número de contrato:");
+		                        String os = JOptionPane.showInputDialog("Nueva obra social:");
+
+		                        if (nom != null && ape != null && pass != null && nro != null && os != null) {
+		                            ca.modificarPaciente(usr.trim(), nom.trim(), ape.trim(), pass.trim(),
+		                                    Integer.parseInt(nro.trim()), os.trim());
+		                            JOptionPane.showMessageDialog(null, "Paciente modificado exitosamente");
+		                        }
+		                    }
+		                }
+		                case "Registrar médico" -> {
+		                    String usr = JOptionPane.showInputDialog("Usuario:");
+		                    String nom = JOptionPane.showInputDialog("Nombre:");
+		                    String ape = JOptionPane.showInputDialog("Apellido:");
+		                    String pass = JOptionPane.showInputDialog("Contraseña:");
+		                    String matricula = JOptionPane.showInputDialog("Matrícula:");
+		                    String esp = JOptionPane.showInputDialog("Especialidad:");
+
+		                    if (usr != null && nom != null && ape != null && pass != null && matricula != null && esp != null) {
+		                        ca.registrarMedico(usr.trim(), nom.trim(), ape.trim(), pass.trim(),
+		                                matricula.trim(), esp.trim());
+		                        JOptionPane.showMessageDialog(null, "Médico registrado exitosamente");
+		                    }
+		                }
+		                case "Modificar datos de médico" -> {
+		                    String usr = JOptionPane.showInputDialog("Usuario del médico a modificar:");
+		                    if (usr != null) {
+		                        String nom = JOptionPane.showInputDialog("Nuevo nombre:");
+		                        String ape = JOptionPane.showInputDialog("Nuevo apellido:");
+		                        String pass = JOptionPane.showInputDialog("Nueva contraseña:");
+		                        String matricula = JOptionPane.showInputDialog("Nueva matrícula:");
+		                        String esp = JOptionPane.showInputDialog("Nueva especialidad:");
+
+		                        if (nom != null && ape != null && pass != null && matricula != null && esp != null) {
+		                            ca.modificarMedico(usr.trim(), nom.trim(), ape.trim(), pass.trim(),
+		                                    matricula.trim(), esp.trim());
+		                            JOptionPane.showMessageDialog(null, "Médico modificado exitosamente");
+		                        }
+		                    }
+		                }
+		                case "Listar usuarios" -> {
+		                    String rol = JOptionPane.showInputDialog("Ingrese rol a listar (Paciente o Medico):");
+		                    if (rol != null) {
+		                        var usuarios = ca.listarUsuariosPorRol(rol.trim());
+		                        if (usuarios.isEmpty()) {
+		                            JOptionPane.showMessageDialog(null, "No hay usuarios registrados con ese rol.");
+		                        } else {
+		                            StringBuilder sb = new StringBuilder("Usuarios:\n");
+		                            usuarios.forEach(u1 -> sb.append("- ").append(u1).append("\n"));
+		                            JTextArea ta = new JTextArea(sb.toString());
+		                            ta.setEditable(false);
+		                            JOptionPane.showMessageDialog(null, new JScrollPane(ta));
+		                        }
+		                    }
+		                }
+		                case "Eliminar usuario" -> {
+		                    String usr = JOptionPane.showInputDialog("Usuario a eliminar:");
+		                    if (usr != null) {
+		                        ca.eliminarUsuario(usr.trim());
+		                        JOptionPane.showMessageDialog(null, "Usuario eliminado exitosamente");
+		                    }
+		                }
+		            }
+		        } catch (Exception e) {
+		            JOptionPane.showMessageDialog(null, "Error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+		        }
+		    }
+		}
+
+
+
+    JOptionPane.showMessageDialog(null, "Gracias por usar HealthHub!");
+}
 }
