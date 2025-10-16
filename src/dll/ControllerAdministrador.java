@@ -1,7 +1,6 @@
 package dll;
 
 import bll.Usuario;
-
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,32 +13,33 @@ public class ControllerAdministrador {
         this.admin = admin;
     }
 
-    // ================= REGISTRAR PACIENTE =================
+    //REGISTRAR PACIENTE
     public void registrarPaciente(String usuario, String nombre, String apellido, String contrasenia,
                                   int nroContrato, String obraSocial) {
-        String sqlUsuario = "INSERT INTO usuarios(usuario_login, contrasenia, nombre, apellido, rol) VALUES (?, ?, ?, ?, 'Paciente')";
+        String sqlUsuario  = "INSERT INTO usuarios(usuario_login, contrasenia, nombre, apellido, rol) " +
+                             "VALUES (?, ?, ?, ?, 'Paciente')";
         String sqlPaciente = "INSERT INTO pacientes(id_usuario, nro_contrato, obra_social) VALUES (?, ?, ?)";
 
-        try (Connection c = Conexion.getInstance().getConnection();
-             PreparedStatement psUser = c.prepareStatement(sqlUsuario, Statement.RETURN_GENERATED_KEYS)) {
+        try (Connection c = Conexion.getInstance().getConnection()) {
+            c.setAutoCommit(false);
 
-            // Insertar en usuarios
-            psUser.setString(1, usuario);
-            psUser.setString(2, apellido);
-            psUser.setString(3, nombre);
-            psUser.setString(4,  contrasenia);
-            psUser.executeUpdate();
+
+            String passEncriptada = Encriptador.encriptar(contrasenia);
 
             long idUsuario;
-            try (ResultSet keys = psUser.getGeneratedKeys()) {
-                if (keys.next()) {
+            try (PreparedStatement psUser = c.prepareStatement(sqlUsuario, Statement.RETURN_GENERATED_KEYS)) {
+                psUser.setString(1, usuario);
+                psUser.setString(2, passEncriptada);
+                psUser.setString(3, nombre);
+                psUser.setString(4, apellido);
+                psUser.executeUpdate();
+
+                try (ResultSet keys = psUser.getGeneratedKeys()) {
+                    if (!keys.next()) throw new SQLException("No se pudo obtener id_usuario");
                     idUsuario = keys.getLong(1);
-                } else {
-                    throw new SQLException("No se pudo obtener id_usuario");
                 }
             }
 
-            // Insertar en pacientes
             try (PreparedStatement psPac = c.prepareStatement(sqlPaciente)) {
                 psPac.setLong(1, idUsuario);
                 psPac.setInt(2, nroContrato);
@@ -47,12 +47,16 @@ public class ControllerAdministrador {
                 psPac.executeUpdate();
             }
 
+            c.commit();
+            c.setAutoCommit(true);
+        } catch (SQLIntegrityConstraintViolationException dup) {
+            throw new RuntimeException("Usuario ya existente: " + usuario, dup);
         } catch (SQLException e) {
-            throw new RuntimeException("Error registrando paciente", e);
+            throw new RuntimeException("Error registrando paciente: " + e.getMessage(), e);
         }
     }
 
-    // ================= MODIFICAR PACIENTE =================
+    // MODIFICAR PACIENTE
     public void modificarPaciente(String usuario, String nombre, String apellido, String contrasenia,
                                   int nroContrato, String obraSocial) {
         String sqlUsuario = "UPDATE usuarios SET nombre=?, apellido=?, contrasenia=? WHERE usuario_login=?";
@@ -63,9 +67,12 @@ public class ControllerAdministrador {
              PreparedStatement psUser = c.prepareStatement(sqlUsuario);
              PreparedStatement psPac = c.prepareStatement(sqlPaciente)) {
 
+            
+            String passEncriptada = Encriptador.encriptar(contrasenia);
+
             psUser.setString(1, nombre);
             psUser.setString(2, apellido);
-            psUser.setString(3, contrasenia);
+            psUser.setString(3, passEncriptada);
             psUser.setString(4, usuario);
             psUser.executeUpdate();
 
@@ -79,7 +86,7 @@ public class ControllerAdministrador {
         }
     }
 
-    // ================= REGISTRAR MÉDICO =================
+    //REGISTRAR MÉDICO
     public void registrarMedico(String usuario, String nombre, String apellido, String contrasenia,
                                 String matricula, String especialidad) {
         String sqlUsuario = "INSERT INTO usuarios(usuario_login, contrasenia, nombre, apellido, rol) VALUES (?, ?, ?, ?, 'Medico')";
@@ -88,9 +95,11 @@ public class ControllerAdministrador {
         try (Connection c = Conexion.getInstance().getConnection();
              PreparedStatement psUser = c.prepareStatement(sqlUsuario, Statement.RETURN_GENERATED_KEYS)) {
 
-            // Insertar en usuarios
+
+            String passEncriptada = Encriptador.encriptar(contrasenia);
+
             psUser.setString(1, usuario);
-            psUser.setString(2, contrasenia);
+            psUser.setString(2, passEncriptada);
             psUser.setString(3, nombre);
             psUser.setString(4, apellido);
             psUser.executeUpdate();
@@ -104,7 +113,6 @@ public class ControllerAdministrador {
                 }
             }
 
-            // Insertar en medicos
             try (PreparedStatement psMed = c.prepareStatement(sqlMedico)) {
                 psMed.setLong(1, idUsuario);
                 psMed.setString(2, matricula);
@@ -117,7 +125,7 @@ public class ControllerAdministrador {
         }
     }
 
-    // ================= MODIFICAR MÉDICO =================
+    //MODIFICAR MÉDICO
     public void modificarMedico(String usuario, String nombre, String apellido, String contrasenia,
                                 String matricula, String especialidad) {
         String sqlUsuario = "UPDATE usuarios SET nombre=?, apellido=?, contrasenia=? WHERE usuario_login=?";
@@ -128,9 +136,11 @@ public class ControllerAdministrador {
              PreparedStatement psUser = c.prepareStatement(sqlUsuario);
              PreparedStatement psMed = c.prepareStatement(sqlMedico)) {
 
+            String passEncriptada = Encriptador.encriptar(contrasenia);
+
             psUser.setString(1, nombre);
             psUser.setString(2, apellido);
-            psUser.setString(3, contrasenia);
+            psUser.setString(3, passEncriptada);
             psUser.setString(4, usuario);
             psUser.executeUpdate();
 
@@ -144,7 +154,7 @@ public class ControllerAdministrador {
         }
     }
 
-    // ================= ELIMINAR USUARIO =================
+    //ELIMINAR USUARIO
     public void eliminarUsuario(String usuario) {
         String sql = "DELETE FROM usuarios WHERE usuario_login=?";
         try (Connection c = Conexion.getInstance().getConnection();
@@ -156,7 +166,7 @@ public class ControllerAdministrador {
         }
     }
 
-    // ================= LISTAR USUARIOS =================
+    //LISTAR USUARIOS
     public List<String> listarUsuariosPorRol(String rol) {
         String sql = "SELECT usuario_login, nombre, apellido FROM usuarios WHERE rol=?";
         List<String> list = new ArrayList<>();
@@ -178,5 +188,4 @@ public class ControllerAdministrador {
         }
         return list;
     }
-
 }
