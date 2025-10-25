@@ -390,9 +390,9 @@ public class Main {
         } else if (u instanceof Administrador a) {
             ControllerAdministrador ca = new ControllerAdministrador(a);
             String[] ops = {
-                    "Registrar paciente",
+                    "Alta de paciente",
                     "Modificar datos de paciente",
-                    "Registrar médico",
+                    "Alta de médico",
                     "Modificar datos de médico",
                     "Listar usuarios",
                     "Eliminar usuario",
@@ -406,83 +406,255 @@ public class Main {
                         JOptionPane.PLAIN_MESSAGE, null, ops, ops[0]
                 );
 
-                if (choice == null || "Salir".equals(choice.toString())) { salir = true; continue; }
+                if (choice == null || "Salir".equals(choice.toString())) { 
+                    salir = true; 
+                    continue; 
+                }
                 String op = choice.toString();
 
                 try {
                     switch (op) {
-                        case "Registrar paciente" -> {
-                            String usr = JOptionPane.showInputDialog("Usuario:");
+                        //ALTA PACIENTE ----------------
+                        case "Alta de paciente" -> {
+                            String usr, nom, ape, pass, nro, os;
+
+                            // Usuario
+                            while (true) {
+                                usr = JOptionPane.showInputDialog("Usuario:");
+                                if (usr == null) break;
+                                if (!usr.trim().isEmpty()) break;
+                                JOptionPane.showMessageDialog(null, "Ingrese el usuario.");
+                            }
                             if (usr == null) continue;
-                            String nom = JOptionPane.showInputDialog("Nombre:");
+
+                            // Nombre
+                            while (true) {
+                                nom = JOptionPane.showInputDialog("Nombre:");
+                                if (nom == null) break;
+                                if (!nom.trim().isEmpty()) break;
+                                JOptionPane.showMessageDialog(null, "Ingrese el nombre.");
+                            }
                             if (nom == null) continue;
-                            String ape = JOptionPane.showInputDialog("Apellido:");
+
+                            // Apellido
+                            while (true) {
+                                ape = JOptionPane.showInputDialog("Apellido:");
+                                if (ape == null) break;
+                                if (!ape.trim().isEmpty()) break;
+                                JOptionPane.showMessageDialog(null, "Ingrese el apellido.");
+                            }
                             if (ape == null) continue;
-                            String pass = JOptionPane.showInputDialog("Contraseña:");
+
+                            // Contraseña
+                            while (true) {
+                                pass = JOptionPane.showInputDialog("Contraseña:");
+                                if (pass == null) break;
+                                if (!pass.trim().isEmpty()) break;
+                                JOptionPane.showMessageDialog(null, "Ingrese la contraseña.");
+                            }
                             if (pass == null) continue;
-                            String nro = JOptionPane.showInputDialog("Número de contrato:");
+
+                            // contrato
+                            while (true) {
+                                nro = JOptionPane.showInputDialog("Número de contrato:");
+                                if (nro == null) break;
+                                if (!nro.trim().isEmpty() && nro.matches("\\d+")) break;
+                                JOptionPane.showMessageDialog(null, "Ingrese un número de contrato válido.");
+                            }
                             if (nro == null) continue;
-                            String os = JOptionPane.showInputDialog("Obra social:");
+
+                            // Obra social
+                            while (true) {
+                                os = JOptionPane.showInputDialog("Obra social:");
+                                if (os == null) break;
+                                if (!os.trim().isEmpty()) break;
+                                JOptionPane.showMessageDialog(null, "Ingrese la obra social.");
+                            }
                             if (os == null) continue;
 
                             ca.registrarPaciente(usr.trim(), nom.trim(), ape.trim(), pass.trim(),
                                     Integer.parseInt(nro.trim()), os.trim());
                             JOptionPane.showMessageDialog(null, "Paciente registrado exitosamente");
                         }
+
+                        //MODIFICAR PACIENTE ----------------
                         case "Modificar datos de paciente" -> {
-                            String usr = JOptionPane.showInputDialog("Usuario del paciente a modificar:");
+                            String usr, nom, ape, pass, nro, os;
+
+                            // Usr a modificar
+                            while (true) {
+                                usr = JOptionPane.showInputDialog("Usuario del paciente a modificar:");
+                                if (usr == null) break;
+                                if (!usr.trim().isEmpty()) break;
+                                JOptionPane.showMessageDialog(null, "Ingrese el usuario del paciente.");
+                            }
                             if (usr == null) continue;
-                            String nom = JOptionPane.showInputDialog("Nuevo nombre:");
+
+                            // Nombre
+                            while (true) {
+                                nom = JOptionPane.showInputDialog("Nuevo nombre:");
+                                if (nom == null) break;
+                                if (!nom.trim().isEmpty()) break;
+                                JOptionPane.showMessageDialog(null, "Ingrese el nuevo nombre.");
+                            }
                             if (nom == null) continue;
-                            String ape = JOptionPane.showInputDialog("Nuevo apellido:");
+
+                            // Apellido
+                            while (true) {
+                                ape = JOptionPane.showInputDialog("Nuevo apellido:");
+                                if (ape == null) break;
+                                if (!ape.trim().isEmpty()) break;
+                                JOptionPane.showMessageDialog(null, "Ingrese el nuevo apellido.");
+                            }
                             if (ape == null) continue;
-                            String pass = JOptionPane.showInputDialog("Nueva contraseña:");
+
+                            // Contraseña
+                            while (true) {
+                                pass = JOptionPane.showInputDialog("Nueva contraseña:");
+                                if (pass == null) break;
+                                if (!pass.trim().isEmpty()) break;
+                                JOptionPane.showMessageDialog(null, "Ingrese la nueva contraseña.");
+                            }
                             if (pass == null) continue;
-                            String nro = JOptionPane.showInputDialog("Nuevo número de contrato:");
+
+                            // Número de contrato
+                            while (true) {
+                                nro = JOptionPane.showInputDialog("Nuevo número de contrato:");
+                                if (nro == null) break;
+                                if (!nro.trim().isEmpty() && nro.matches("\\d+")) break;
+                                JOptionPane.showMessageDialog(null, "Ingrese un número de contrato válido.");
+                            }
                             if (nro == null) continue;
-                            String os = JOptionPane.showInputDialog("Nueva obra social:");
+
+                            // Obra social
+                            while (true) {
+                                os = JOptionPane.showInputDialog("Nueva obra social:");
+                                if (os == null) break;
+                                if (!os.trim().isEmpty()) break;
+                                JOptionPane.showMessageDialog(null, "Ingrese la nueva obra social.");
+                            }
                             if (os == null) continue;
 
                             ca.modificarPaciente(usr.trim(), nom.trim(), ape.trim(), pass.trim(),
                                     Integer.parseInt(nro.trim()), os.trim());
                             JOptionPane.showMessageDialog(null, "Paciente modificado exitosamente");
                         }
-                        case "Registrar médico" -> {
-                            String usr = JOptionPane.showInputDialog("Usuario:");
+
+                        //ALTA MÉDICO ----------------
+                        case "Alta de médico" -> {
+                            String usr, nom, ape, pass, matricula, esp;
+
+                            while (true) {
+                                usr = JOptionPane.showInputDialog("Usuario:");
+                                if (usr == null) break;
+                                if (!usr.trim().isEmpty()) break;
+                                JOptionPane.showMessageDialog(null, "Ingrese el usuario.");
+                            }
                             if (usr == null) continue;
-                            String nom = JOptionPane.showInputDialog("Nombre:");
+
+                            while (true) {
+                                nom = JOptionPane.showInputDialog("Nombre:");
+                                if (nom == null) break;
+                                if (!nom.trim().isEmpty()) break;
+                                JOptionPane.showMessageDialog(null, "Ingrese el nombre.");
+                            }
                             if (nom == null) continue;
-                            String ape = JOptionPane.showInputDialog("Apellido:");
+
+                            while (true) {
+                                ape = JOptionPane.showInputDialog("Apellido:");
+                                if (ape == null) break;
+                                if (!ape.trim().isEmpty()) break;
+                                JOptionPane.showMessageDialog(null, "Ingrese el apellido.");
+                            }
                             if (ape == null) continue;
-                            String pass = JOptionPane.showInputDialog("Contraseña:");
+
+                            while (true) {
+                                pass = JOptionPane.showInputDialog("Contraseña:");
+                                if (pass == null) break;
+                                if (!pass.trim().isEmpty()) break;
+                                JOptionPane.showMessageDialog(null, "Ingrese la contraseña.");
+                            }
                             if (pass == null) continue;
-                            String matricula = JOptionPane.showInputDialog("Matrícula:");
+
+                            while (true) {
+                                matricula = JOptionPane.showInputDialog("Matrícula:");
+                                if (matricula == null) break;
+                                if (!matricula.trim().isEmpty() && matricula.matches("\\d+")) break;
+                                JOptionPane.showMessageDialog(null, "Ingrese una matrícula válida (solo números).");
+                            }
                             if (matricula == null) continue;
-                            String esp = JOptionPane.showInputDialog("Especialidad:");
+
+                            while (true) {
+                                esp = JOptionPane.showInputDialog("Especialidad:");
+                                if (esp == null) break;
+                                if (!esp.trim().isEmpty()) break;
+                                JOptionPane.showMessageDialog(null, "Ingrese la especialidad.");
+                            }
                             if (esp == null) continue;
 
                             ca.registrarMedico(usr.trim(), nom.trim(), ape.trim(), pass.trim(),
                                     matricula.trim(), esp.trim());
                             JOptionPane.showMessageDialog(null, "Médico registrado exitosamente");
                         }
+
+                        //MODIFICAR MÉDICO ----------------
                         case "Modificar datos de médico" -> {
-                            String usr = JOptionPane.showInputDialog("Usuario del médico a modificar:");
+                            String usr, nom, ape, pass, matricula, esp;
+
+                            while (true) {
+                                usr = JOptionPane.showInputDialog("Usuario del médico a modificar:");
+                                if (usr == null) break;
+                                if (!usr.trim().isEmpty()) break;
+                                JOptionPane.showMessageDialog(null, "Ingrese el usuario del médico.");
+                            }
                             if (usr == null) continue;
-                            String nom = JOptionPane.showInputDialog("Nuevo nombre:");
+
+                            while (true) {
+                                nom = JOptionPane.showInputDialog("Nuevo nombre:");
+                                if (nom == null) break;
+                                if (!nom.trim().isEmpty()) break;
+                                JOptionPane.showMessageDialog(null, "Ingrese el nuevo nombre.");
+                            }
                             if (nom == null) continue;
-                            String ape = JOptionPane.showInputDialog("Nuevo apellido:");
+
+                            while (true) {
+                                ape = JOptionPane.showInputDialog("Nuevo apellido:");
+                                if (ape == null) break;
+                                if (!ape.trim().isEmpty()) break;
+                                JOptionPane.showMessageDialog(null, "Ingrese el nuevo apellido.");
+                            }
                             if (ape == null) continue;
-                            String pass = JOptionPane.showInputDialog("Nueva contraseña:");
+
+                            while (true) {
+                                pass = JOptionPane.showInputDialog("Nueva contraseña:");
+                                if (pass == null) break;
+                                if (!pass.trim().isEmpty()) break;
+                                JOptionPane.showMessageDialog(null, "Ingrese la nueva contraseña.");
+                            }
                             if (pass == null) continue;
-                            String matricula = JOptionPane.showInputDialog("Nueva matrícula:");
+
+                            while (true) {
+                                matricula = JOptionPane.showInputDialog("Nueva matrícula:");
+                                if (matricula == null) break;
+                                if (!matricula.trim().isEmpty() && matricula.matches("\\d+")) break;
+                                JOptionPane.showMessageDialog(null, "Ingrese una matrícula válida (solo números).");
+                            }
                             if (matricula == null) continue;
-                            String esp = JOptionPane.showInputDialog("Nueva especialidad:");
+
+                            while (true) {
+                                esp = JOptionPane.showInputDialog("Nueva especialidad:");
+                                if (esp == null) break;
+                                if (!esp.trim().isEmpty()) break;
+                                JOptionPane.showMessageDialog(null, "Ingrese la nueva especialidad.");
+                            }
                             if (esp == null) continue;
 
                             ca.modificarMedico(usr.trim(), nom.trim(), ape.trim(), pass.trim(),
                                     matricula.trim(), esp.trim());
                             JOptionPane.showMessageDialog(null, "Médico modificado exitosamente");
                         }
+
+                        //LISTAR USUARIOS ----------------
                         case "Listar usuarios" -> {
                             String rol = JOptionPane.showInputDialog("Ingrese rol a listar (Paciente o Medico):");
                             if (rol == null) continue;
@@ -492,13 +664,23 @@ public class Main {
                             } else {
                                 StringBuilder sb = new StringBuilder("Usuarios:\n");
                                 usuarios.forEach(u1 -> sb.append("- ").append(u1).append("\n"));
-                                JTextArea ta = new JTextArea(sb.toString()); ta.setEditable(false);
+                                JTextArea ta = new JTextArea(sb.toString()); 
+                                ta.setEditable(false);
                                 JOptionPane.showMessageDialog(null, new JScrollPane(ta));
                             }
                         }
+
+                        //ELIMINAR USUARIO ----------------
                         case "Eliminar usuario" -> {
-                            String usr = JOptionPane.showInputDialog("Usuario a eliminar:");
+                            String usr;
+                            while (true) {
+                                usr = JOptionPane.showInputDialog("Usuario a eliminar:");
+                                if (usr == null) break;
+                                if (!usr.trim().isEmpty()) break;
+                                JOptionPane.showMessageDialog(null, "Ingrese el usuario a eliminar.");
+                            }
                             if (usr == null) continue;
+
                             ca.eliminarUsuario(usr.trim());
                             JOptionPane.showMessageDialog(null, "Usuario eliminado exitosamente");
                         }
@@ -506,8 +688,9 @@ public class Main {
                 } catch (Exception e) {
                     JOptionPane.showMessageDialog(null, "Error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                 }
-            } 
+            }
         }
+
 
         JOptionPane.showMessageDialog(null, "Gracias por usar HealthHub!");
     }

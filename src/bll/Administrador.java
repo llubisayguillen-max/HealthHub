@@ -18,6 +18,11 @@ public class Administrador extends Usuario {
     }
 
     @Override
+    public String getRol() {
+        return "Administrador";
+    }
+
+    @Override
     public String toString() {
         return "Administrador{" +
                 "nombre='" + getNombre() + '\'' +
