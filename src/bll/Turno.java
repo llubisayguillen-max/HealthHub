@@ -60,4 +60,10 @@ public class Turno {
 		this.estado = "Confirmado";
 	}
 
+	@Override
+	public String toString() {
+		return "Turno{" + "fechaHora=" + fechaHora + ", paciente="
+				+ (paciente != null ? paciente.getNombre() + " " + paciente.getApellido() : "N/D") + ", medico="
+				+ (medico != null ? medico.getNombreCompleto() : "N/D") + ", estado='" + estado + '\'' + '}';
+	}
 }
