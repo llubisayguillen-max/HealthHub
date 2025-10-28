@@ -84,13 +84,15 @@ public class ControllerPaciente {
 
 	// Solicitar Turno
 
-	public long solicitarTurno(String usernameMedico, Date fechaHora) {
-		if (usernameMedico == null || usernameMedico.trim().isEmpty())
+	public long solicitarTurno(Medico medico, Date fechaHora) {
+		if (medico == null)
 			throw new IllegalArgumentException("Debe seleccionar un médico válido.");
 		if (fechaHora == null)
 			throw new IllegalArgumentException("Debe seleccionar una fecha y hora válidas.");
 		if (fechaHora.before(new Date()))
 			throw new IllegalArgumentException("No se puede reservar un turno en el pasado.");
+
+		String usernameMedico = medico.getUsuario();
 
 		// Verificar solapamiento
 		String sqlSolape = "SELECT 1 FROM turnos t " + "JOIN medicos m ON m.id = t.id_medico "
@@ -133,7 +135,9 @@ public class ControllerPaciente {
 
 				try (ResultSet rs = ps.getGeneratedKeys()) {
 					long id = rs.next() ? rs.getLong(1) : 0L;
-					paciente.agregarTurno(new Turno(fechaHora, paciente, null));
+					Turno t = new Turno(fechaHora, paciente, medico);
+					t.setIdTurno(id);
+					paciente.agregarTurno(t);
 					return id;
 				}
 			}
@@ -280,4 +284,3 @@ public class ControllerPaciente {
 	}
 
 }
-

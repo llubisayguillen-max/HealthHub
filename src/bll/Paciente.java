@@ -118,7 +118,6 @@ public class Paciente extends Usuario implements Menu {
 				JOptionPane.showMessageDialog(null, "Debes ingresar un número válido.");
 				return;
 			}
-
 			if (selMedico < 0 || selMedico >= medicos.size()) {
 				JOptionPane.showMessageDialog(null, "Selección inválida.");
 				return;
@@ -143,23 +142,35 @@ public class Paciente extends Usuario implements Menu {
 				JOptionPane.showMessageDialog(null, "Debes ingresar un número válido.");
 				return;
 			}
-
 			if (selHorario < 0 || selHorario >= horarios.size()) {
 				JOptionPane.showMessageDialog(null, "Selección inválida.");
 				return;
 			}
 
-			// P/ armar la fecha y hora reales
-			String horarioStr = horarios.get(selHorario);
-			String horaInicio = horarioStr.split(" - ")[0]; // hora inicio
-			String fechaHoy = new SimpleDateFormat("yyyy-MM-dd").format(new Date()); // fecha actual
-			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-			Date fechaHora = sdf.parse(fechaHoy + " " + horaInicio);
+			// para armar la fecha y hora reales
+			String horarioSeleccionado = horarios.get(selHorario); // ej: "08:00:00 - 09:00:00"
+			String horaInicio;
+			try {
+				horaInicio = horarioSeleccionado.split(" - ")[0];
+			} catch (Exception ex) {
+				JOptionPane.showMessageDialog(null, "Formato de horario inválido.");
+				return;
+			}
 
-			long idTurno = controller.solicitarTurno(m.getUsuario(), fechaHora);
+			String fechaHoy = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			Date fechaHora;
+			try {
+				fechaHora = sdf.parse(fechaHoy + " " + horaInicio);
+			} catch (ParseException ex) {
+				JOptionPane.showMessageDialog(null, "Error al parsear la fecha y hora.");
+				return;
+			}
+
+			long idTurno = controller.solicitarTurno(m, fechaHora);
 			JOptionPane.showMessageDialog(null, "Turno reservado con éxito. ID: " + idTurno);
 
-		} catch (IllegalStateException | ParseException e) {
+		} catch (IllegalStateException e) {
 			JOptionPane.showMessageDialog(null, "Error: " + e.getMessage());
 		}
 	}
@@ -192,8 +203,8 @@ public class Paciente extends Usuario implements Menu {
 
 		Turno t = turnos.get(selTurno);
 		try {
-			t.cancelar(); // metodo de turno
-			controller.cancelarTurno(t.getPaciente().getNroContrato());
+			controller.cancelarTurno(t.getIdTurno()); // usar ID real
+			t.cancelar(); // actualizar estado local
 			JOptionPane.showMessageDialog(null, "Turno cancelado con éxito.");
 		} catch (IllegalStateException | IllegalArgumentException e) {
 			JOptionPane.showMessageDialog(null, "Error cancelando turno: " + e.getMessage());
