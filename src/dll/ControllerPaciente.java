@@ -82,8 +82,7 @@ public class ControllerPaciente {
 		return franjas;
 	}
 
-	// Solicitar Turno
-
+	// Solicitar turno
 	public long solicitarTurno(Medico medico, Date fechaHora) {
 		if (medico == null)
 			throw new IllegalArgumentException("Debe seleccionar un médico válido.");
@@ -135,9 +134,7 @@ public class ControllerPaciente {
 
 				try (ResultSet rs = ps.getGeneratedKeys()) {
 					long id = rs.next() ? rs.getLong(1) : 0L;
-					Turno t = new Turno(fechaHora, paciente, medico);
-					t.setIdTurno(id);
-					paciente.agregarTurno(t);
+					paciente.agregarTurno(new Turno(fechaHora, paciente, null));
 					return id;
 				}
 			}
@@ -145,6 +142,25 @@ public class ControllerPaciente {
 		} catch (SQLException e) {
 			throw new RuntimeException("Error al reservar turno", e);
 		}
+	}
+
+	public long solicitarTurno(String usernameMedico, Date fechaHora) {
+		if (usernameMedico == null || usernameMedico.trim().isEmpty())
+			throw new IllegalArgumentException("Debe ingresar un nombre de usuario de médico válido.");
+
+		List<Medico> medicos = filtrarPorEspecialidad("");
+		Medico medicoSeleccionado = null;
+		for (Medico m : medicos) {
+			if (m.getUsuario().equalsIgnoreCase(usernameMedico.trim())) {
+				medicoSeleccionado = m;
+				break;
+			}
+		}
+
+		if (medicoSeleccionado == null)
+			throw new IllegalStateException("No se encontró el médico con username: " + usernameMedico);
+
+		return solicitarTurno(medicoSeleccionado, fechaHora);
 	}
 
 	// turnos activos
@@ -199,6 +215,37 @@ public class ControllerPaciente {
 			ps.executeUpdate();
 		} catch (SQLException e) {
 			throw new RuntimeException("Error cancelando turno", e);
+		}
+	}
+
+	// Confirmar asistencia a un turno
+	public void confirmarAsistencia(long idTurno) {
+		if (idTurno <= 0)
+			throw new IllegalArgumentException("ID de turno inválido.");
+
+		String sqlCheck = "SELECT estado FROM turnos WHERE id = ?";
+		try (Connection c = Conexion.getInstance().getConnection();
+				PreparedStatement ps = c.prepareStatement(sqlCheck)) {
+			ps.setLong(1, idTurno);
+			try (ResultSet rs = ps.executeQuery()) {
+				if (!rs.next())
+					throw new IllegalStateException("El turno no existe.");
+				String estado = rs.getString("estado");
+				if ("Confirmado".equalsIgnoreCase(estado))
+					throw new IllegalStateException("El turno ya fue confirmado.");
+				if ("Cancelado".equalsIgnoreCase(estado))
+					throw new IllegalStateException("No se puede confirmar un turno cancelado.");
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException("Error verificando el turno antes de confirmar.", e);
+		}
+
+		String sql = "UPDATE turnos SET estado='Confirmado' WHERE id = ?";
+		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+			ps.setLong(1, idTurno);
+			ps.executeUpdate();
+		} catch (SQLException e) {
+			throw new RuntimeException("Error confirmando asistencia", e);
 		}
 	}
 
