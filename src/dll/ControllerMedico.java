@@ -4,37 +4,54 @@ import bll.Consulta;
 import bll.Medico;
 
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 public class ControllerMedico {
 
-	private static final int MIN_BLOCK_MINUTES = 15;
 	private final Medico medico;
 
 	public ControllerMedico(Medico medico) {
+		if (medico == null || medico.getUsuario() == null || medico.getUsuario().trim().isEmpty()) {
+			throw new IllegalArgumentException("Datos inválidos");
+		}
 		this.medico = medico;
 	}
 
-	public void registrarDisponibilidad(Time horaInicio, Time horaFin) {
-		if (horaInicio == null || horaFin == null)
-			throw new IllegalArgumentException("Las horas no pueden ser nulas.");
+	// registra la disponibilidad semanal
+	public void registrarDisponibilidad(java.sql.Date fecha, Time horaInicio, Time horaFin) {
+		if (fecha == null || horaInicio == null || horaFin == null)
+			throw new IllegalArgumentException("Ingrese fecha y horas válidas");
 		if (!horaFin.after(horaInicio))
-			throw new IllegalArgumentException("La hora fin debe ser mayor que la hora inicio.");
-		long mins = java.time.Duration.between(horaInicio.toLocalTime(), horaFin.toLocalTime()).toMinutes();
-		if (mins < MIN_BLOCK_MINUTES)
-			throw new IllegalArgumentException("La franja debe durar al menos " + MIN_BLOCK_MINUTES + " minutos.");
+			throw new IllegalArgumentException("La hora fin debe ser mayor que la hora inicio");
 
-		final String qMed = "SELECT m.id FROM medicos m JOIN usuarios u ON u.id_usuario = m.id_usuario "
-				+ "WHERE u.usuario_login = ?";
-		final String qSolape = "SELECT COUNT(*) FROM medico_disponibilidad d "
-				+ "WHERE d.id_medico = ? AND NOT (d.hora_fin <= ? OR d.hora_inicio >= ?)";
-		final String ins = "INSERT INTO medico_disponibilidad(id_medico, hora_inicio, hora_fin) VALUES (?, ?, ?)";
+		final String qMed = """
+				    SELECT m.id
+				    FROM medicos m
+				    JOIN usuarios u ON u.id_usuario = m.id_usuario
+				    WHERE u.usuario_login = ?
+				""";
+
+		final String qSolape = """
+				    SELECT 1
+				    FROM medico_disponibilidad d
+				    WHERE d.id_medico = ?
+				      AND d.fecha     = ?
+				      AND d.hora_inicio < ?
+				      AND d.hora_fin    > ?
+				""";
+
+		final String ins = """
+				    INSERT INTO medico_disponibilidad(id_medico, fecha, hora_inicio, hora_fin)
+				    VALUES (?, ?, ?, ?)
+				""";
 
 		try (Connection c = Conexion.getInstance().getConnection()) {
-			c.setAutoCommit(false);
-
 			Long idMedico = null;
 			try (PreparedStatement ps = c.prepareStatement(qMed)) {
 				ps.setString(1, medico.getUsuario());
@@ -44,52 +61,86 @@ public class ControllerMedico {
 				}
 			}
 			if (idMedico == null)
-				throw new IllegalStateException("No se encontró el médico del usuario.");
+				throw new IllegalStateException("No se encontró el médico");
 
-			// validar solape
 			try (PreparedStatement ps = c.prepareStatement(qSolape)) {
 				ps.setLong(1, idMedico);
-				ps.setTime(2, horaInicio);
+				ps.setDate(2, fecha);
 				ps.setTime(3, horaFin);
+				ps.setTime(4, horaInicio);
 				try (ResultSet rs = ps.executeQuery()) {
-					rs.next();
-					if (rs.getInt(1) > 0)
-						throw new IllegalArgumentException("La franja se solapa con otra existente.");
+					if (rs.next())
+						throw new IllegalArgumentException("La franja se solapa con otra existente");
 				}
 			}
 
-			// insertar
 			try (PreparedStatement ps = c.prepareStatement(ins)) {
 				ps.setLong(1, idMedico);
-				ps.setTime(2, horaInicio);
-				ps.setTime(3, horaFin);
+				ps.setDate(2, fecha);
+				ps.setTime(3, horaInicio);
+				ps.setTime(4, horaFin);
 				ps.executeUpdate();
 			}
-
-			c.commit();
 		} catch (SQLException e) {
 			throw new RuntimeException("Error registrando disponibilidad: " + e.getMessage(), e);
 		}
 	}
 
+	// Valida que exista el id de la disponibilidad
+	public void validarId(int idDisponibilidad) {
+		if (idDisponibilidad <= 0)
+			throw new IllegalArgumentException("Id inválido");
+		final String qCheck = """
+				    SELECT 1
+				    FROM medico_disponibilidad md
+				    JOIN medicos m  ON m.id = md.id_medico
+				    JOIN usuarios u ON u.id_usuario = m.id_usuario
+				    WHERE md.id = ? AND u.usuario_login = ?
+				""";
+		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(qCheck)) {
+			ps.setInt(1, idDisponibilidad);
+			ps.setString(2, medico.getUsuario());
+			try (ResultSet rs = ps.executeQuery()) {
+				if (!rs.next())
+					throw new IllegalStateException("Id inexistente");
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException("Error verificando disponibilidad", e);
+		}
+	}
+
 	public void modificarDisponibilidad(int idDisponibilidad, Time horaInicio, Time horaFin) {
 		if (horaInicio == null || horaFin == null)
-			throw new IllegalArgumentException("Las horas no pueden ser nulas.");
+			throw new IllegalArgumentException("Las horas no pueden ser nulas");
 		if (!horaFin.after(horaInicio))
-			throw new IllegalArgumentException("La hora fin debe ser mayor que la hora inicio.");
-		long mins = java.time.Duration.between(horaInicio.toLocalTime(), horaFin.toLocalTime()).toMinutes();
-		if (mins < MIN_BLOCK_MINUTES)
-			throw new IllegalArgumentException("La franja debe durar al menos " + MIN_BLOCK_MINUTES + " minutos.");
+			throw new IllegalArgumentException("La hora fin debe ser mayor que la hora inicio");
 
-		final String qMed = "SELECT m.id FROM medicos m JOIN usuarios u ON u.id_usuario = m.id_usuario "
-				+ "WHERE u.usuario_login = ?";
-		final String qSolape = "SELECT COUNT(*) FROM medico_disponibilidad d "
-				+ "WHERE d.id_medico = ? AND d.id <> ? AND NOT (d.hora_fin <= ? OR d.hora_inicio >= ?)";
-		final String upd = "UPDATE medico_disponibilidad SET hora_inicio=?, hora_fin=? WHERE id=?";
+		final String qMed = """
+				    SELECT m.id
+				    FROM medicos m
+				    JOIN usuarios u ON u.id_usuario = m.id_usuario
+				    WHERE u.usuario_login = ?
+				""";
+
+		final String qSolape = """
+				    SELECT 1
+				    FROM medico_disponibilidad d
+				    WHERE d.id_medico = ?
+				      AND d.fecha = (SELECT fecha FROM medico_disponibilidad WHERE id = ?)
+				      AND d.id <> ?
+				      AND d.hora_inicio < ?
+				      AND d.hora_fin    > ?
+				""";
+
+		final String upd = """
+				    UPDATE medico_disponibilidad d
+				    JOIN medicos m  ON m.id = d.id_medico
+				    JOIN usuarios u ON u.id_usuario = m.id_usuario
+				    SET d.hora_inicio = ?, d.hora_fin = ?
+				    WHERE d.id = ? AND u.usuario_login = ?
+				""";
 
 		try (Connection c = Conexion.getInstance().getConnection()) {
-			c.setAutoCommit(false);
-
 			Long idMedico = null;
 			try (PreparedStatement ps = c.prepareStatement(qMed)) {
 				ps.setString(1, medico.getUsuario());
@@ -99,110 +150,69 @@ public class ControllerMedico {
 				}
 			}
 			if (idMedico == null)
-				throw new IllegalStateException("No se encontró el médico del usuario.");
+				throw new IllegalStateException("No se encontró el médico");
 
-			// validar solape
 			try (PreparedStatement ps = c.prepareStatement(qSolape)) {
 				ps.setLong(1, idMedico);
 				ps.setInt(2, idDisponibilidad);
-				ps.setTime(3, horaInicio);
+				ps.setInt(3, idDisponibilidad);
 				ps.setTime(4, horaFin);
+				ps.setTime(5, horaInicio);
 				try (ResultSet rs = ps.executeQuery()) {
-					rs.next();
-					if (rs.getInt(1) > 0)
-						throw new IllegalArgumentException("La franja se solapa con otra existente.");
+					if (rs.next())
+						throw new IllegalArgumentException("Horario no disponible");
 				}
 			}
 
-			// actualizar
 			try (PreparedStatement ps = c.prepareStatement(upd)) {
 				ps.setTime(1, horaInicio);
 				ps.setTime(2, horaFin);
 				ps.setInt(3, idDisponibilidad);
-				ps.executeUpdate();
-			}
-
-			c.commit();
-		} catch (SQLException e) {
-			throw new RuntimeException("Error modificando disponibilidad: " + e.getMessage(), e);
-		}
-	}
-
-	public List<String> listarDisponibilidad() {
-		String sql = "SELECT md.id, md.hora_inicio, md.hora_fin " + "FROM medico_disponibilidad md "
-				+ "JOIN medicos m ON m.id = md.id_medico " + "JOIN usuarios u ON u.id_usuario = m.id_usuario "
-				+ "WHERE u.usuario_login=? ORDER BY md.hora_inicio";
-		List<String> list = new ArrayList<>();
-		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
-			ps.setString(1, medico.getUsuario());
-			try (ResultSet rs = ps.executeQuery()) {
-				while (rs.next()) {
-					list.add(rs.getInt("id") + " | " + rs.getTime("hora_inicio") + " - " + rs.getTime("hora_fin"));
-				}
+				ps.setString(4, medico.getUsuario());
+				if (ps.executeUpdate() == 0)
+					throw new IllegalStateException("Id inexistente");
 			}
 		} catch (SQLException e) {
-			throw new RuntimeException("Error listando disponibilidad: " + e.getMessage(), e);
+			throw new RuntimeException("Error modificando disponibilidad", e);
 		}
-		return list;
 	}
 
 	public void eliminarDisponibilidad(int idDisponibilidad) {
-		String sql = "DELETE FROM medico_disponibilidad WHERE id=?";
-		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+		if (idDisponibilidad <= 0)
+			throw new IllegalArgumentException("Id inválido");
+		final String del = """
+				    DELETE md
+				    FROM medico_disponibilidad md
+				    JOIN medicos m  ON m.id = md.id_medico
+				    JOIN usuarios u ON u.id_usuario = m.id_usuario
+				    WHERE md.id = ? AND u.usuario_login = ?
+				""";
+		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(del)) {
 			ps.setInt(1, idDisponibilidad);
-			ps.executeUpdate();
+			ps.setString(2, medico.getUsuario());
+			if (ps.executeUpdate() == 0)
+				throw new IllegalStateException("Id inexistente");
 		} catch (SQLException e) {
-			throw new RuntimeException("Error eliminando disponibilidad: " + e.getMessage(), e);
+			throw new RuntimeException("Error eliminando disponibilidad", e);
 		}
 	}
 
-	public List<String> proximosTurnos(int limit) {
-		String sql = "SELECT t.id, t.fecha, t.hora, t.estado, up.usuario_login AS paciente " + "FROM turnos t "
-				+ "JOIN medicos m ON m.id = t.id_medico " + "JOIN usuarios um ON um.id_usuario = m.id_usuario "
-				+ "JOIN pacientes p ON p.id = t.id_paciente " + "JOIN usuarios up ON up.id_usuario = p.id_usuario "
-				+ "WHERE um.usuario_login=? AND CONCAT(t.fecha,' ',t.hora) >= NOW() "
-				+ "ORDER BY t.fecha, t.hora LIMIT ?";
-		List<String> list = new ArrayList<>();
-		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
-			ps.setString(1, medico.getUsuario());
-			ps.setInt(2, Math.max(1, limit));
-			try (ResultSet rs = ps.executeQuery()) {
-				while (rs.next()) {
-					list.add("#" + rs.getLong("id") + " | " + rs.getDate("fecha") + " " + rs.getTime("hora") + " | "
-							+ rs.getString("estado") + " | Paciente: " + rs.getString("paciente"));
-				}
-			}
-		} catch (SQLException e) {
-			throw new RuntimeException("Error listando próximos turnos: " + e.getMessage(), e);
-		}
-		return list;
-	}
-
-	public List<String> turnosDelDia(java.sql.Date dia) {
-		String sql = "SELECT t.id, t.fecha, t.hora, t.estado, up.usuario_login AS paciente " + "FROM turnos t "
-				+ "JOIN medicos m ON m.id = t.id_medico " + "JOIN usuarios um ON um.id_usuario = m.id_usuario "
-				+ "JOIN pacientes p ON p.id = t.id_paciente " + "JOIN usuarios up ON up.id_usuario = p.id_usuario "
-				+ "WHERE um.usuario_login=? AND t.fecha=? " + "ORDER BY t.hora";
-		List<String> list = new ArrayList<>();
-		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
-			ps.setString(1, medico.getUsuario());
-			ps.setDate(2, dia);
-			try (ResultSet rs = ps.executeQuery()) {
-				while (rs.next()) {
-					list.add("#" + rs.getLong("id") + " | " + rs.getDate("fecha") + " " + rs.getTime("hora") + " | "
-							+ rs.getString("estado") + " | Paciente: " + rs.getString("paciente"));
-				}
-			}
-		} catch (SQLException e) {
-			throw new RuntimeException("Error listando turnos del día: " + e.getMessage(), e);
-		}
-		return list;
-	}
-
+	// visualiza la agenda fecha y hora
 	public List<Date> visualizarAgenda(java.sql.Date desde, java.sql.Date hasta) {
-		String sql = "SELECT t.fecha, t.hora " + "FROM turnos t " + "JOIN medicos m ON m.id = t.id_medico "
-				+ "JOIN usuarios u ON u.id_usuario = m.id_usuario "
-				+ "WHERE u.usuario_login=? AND t.fecha BETWEEN ? AND ? " + "ORDER BY t.fecha, t.hora";
+		if (desde == null || hasta == null)
+			throw new IllegalArgumentException("Ingrese fecha");
+		if (hasta.before(desde))
+			throw new IllegalArgumentException("Rango de fechas inválido");
+
+		final String sql = """
+				    SELECT t.fecha, t.hora
+				    FROM turnos t
+				    JOIN medicos m ON m.id = t.id_medico
+				    JOIN usuarios u ON u.id_usuario = m.id_usuario
+				    WHERE u.usuario_login=? AND t.fecha BETWEEN ? AND ?
+				    ORDER BY t.fecha, t.hora
+				""";
+
 		List<Date> agenda = new ArrayList<>();
 		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
 			ps.setString(1, medico.getUsuario());
@@ -210,91 +220,213 @@ public class ControllerMedico {
 			ps.setDate(3, hasta);
 			try (ResultSet rs = ps.executeQuery()) {
 				while (rs.next()) {
-					agenda.add(new Date(rs.getDate("fecha").getTime() + rs.getTime("hora").getTime()));
+					LocalDate f = rs.getDate("fecha").toLocalDate();
+					LocalTime h = rs.getTime("hora").toLocalTime();
+					LocalDateTime ldt = LocalDateTime.of(f, h);
+					agenda.add(Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()));
 				}
 			}
 		} catch (SQLException e) {
-			throw new RuntimeException("Error visualizando agenda: " + e.getMessage(), e);
+			throw new RuntimeException("Error visualizando agenda", e);
 		}
 		return agenda;
 	}
 
 	public void confirmarAsistencia(long idTurno) {
-		String sql = "UPDATE turnos SET estado='Confirmado' WHERE id=?";
+		if (idTurno <= 0)
+			throw new IllegalArgumentException("Id inválido");
+		final String sql = """
+				    UPDATE turnos t
+				    JOIN medicos m  ON m.id = t.id_medico
+				    JOIN usuarios u ON u.id_usuario = m.id_usuario
+				    SET t.estado='Confirmado'
+				    WHERE t.id=? AND u.usuario_login=?
+				""";
 		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
 			ps.setLong(1, idTurno);
-			ps.executeUpdate();
+			ps.setString(2, medico.getUsuario());
+			if (ps.executeUpdate() == 0)
+				throw new IllegalStateException("Turno inexistente");
 		} catch (SQLException e) {
-			throw new RuntimeException("Error confirmando asistencia: " + e.getMessage(), e);
+			throw new RuntimeException("Error confirmando asistencia", e);
 		}
 	}
 
 	public void cancelarTurno(long idTurno) {
-		String sql = "UPDATE turnos SET estado='Cancelado' WHERE id=?";
+		if (idTurno <= 0)
+			throw new IllegalArgumentException("Id de turno inválido");
+		final String sql = """
+				    UPDATE turnos t
+				    JOIN medicos m  ON m.id = t.id_medico
+				    JOIN usuarios u ON u.id_usuario = m.id_usuario
+				    SET t.estado='Cancelado'
+				    WHERE t.id=? AND u.usuario_login=?
+				""";
 		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
 			ps.setLong(1, idTurno);
-			ps.executeUpdate();
+			ps.setString(2, medico.getUsuario());
+			if (ps.executeUpdate() == 0)
+				throw new IllegalStateException("Turno inexistente");
 		} catch (SQLException e) {
-			throw new RuntimeException("Error cancelando turno: " + e.getMessage(), e);
+			throw new RuntimeException("Error cancelando turno", e);
+		}
+	}
+
+	public boolean validarIdTurno(long idTurno) {
+		if (idTurno <= 0)
+			return false;
+		final String q = """
+				    SELECT 1
+				    FROM turnos t
+				    JOIN medicos m  ON m.id = t.id_medico
+				    JOIN usuarios u ON u.id_usuario = m.id_usuario
+				    WHERE t.id=? AND u.usuario_login=?
+				""";
+		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(q)) {
+			ps.setLong(1, idTurno);
+			ps.setString(2, medico.getUsuario());
+			try (ResultSet rs = ps.executeQuery()) {
+				return rs.next();
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException("Error verificando turno", e);
 		}
 	}
 
 	public void reprogramarTurno(long idTurno, Date nuevaFechaHora) {
-		final String qMed = "SELECT t.id_medico FROM turnos t WHERE t.id=?";
-		final String qSolape = "SELECT 1 FROM turnos t " + "WHERE t.id_medico=? AND t.fecha=? AND t.hora=? "
-				+ "AND t.estado IN ('Reservado','Confirmado') AND t.id<>?";
-		final String upd = "UPDATE turnos SET fecha=?, hora=? WHERE id=?";
+		if (idTurno <= 0)
+			throw new IllegalArgumentException("Id de turno inválido");
+		if (nuevaFechaHora == null)
+			throw new IllegalArgumentException("Ingresar fecha y hora");
 
 		java.sql.Date f = new java.sql.Date(nuevaFechaHora.getTime());
 		java.sql.Time h = new java.sql.Time(nuevaFechaHora.getTime());
 
-		try (Connection c = Conexion.getInstance().getConnection()) {
-			c.setAutoCommit(false);
+		long idMedico = -1;
+		String qMedEst = """
+				    SELECT t.id_medico, t.estado
+				    FROM turnos t
+				    JOIN medicos m ON m.id = t.id_medico
+				    JOIN usuarios u ON u.id_usuario = m.id_usuario
+				    WHERE t.id = ? AND u.usuario_login = ?
+				""";
 
-			long idMedico = -1;
-			try (PreparedStatement ps = c.prepareStatement(qMed)) {
-				ps.setLong(1, idTurno);
-				try (ResultSet rs = ps.executeQuery()) {
-					if (rs.next())
-						idMedico = rs.getLong(1);
+		try (Connection c = Conexion.getInstance().getConnection();
+				PreparedStatement ps = c.prepareStatement(qMedEst)) {
+			ps.setLong(1, idTurno);
+			ps.setString(2, medico.getUsuario());
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next()) {
+					idMedico = rs.getLong(1);					
 				}
 			}
-			if (idMedico <= 0)
-				throw new IllegalStateException("Turno inexistente.");
-
-			try (PreparedStatement ps = c.prepareStatement(qSolape)) {
-				ps.setLong(1, idMedico);
-				ps.setDate(2, f);
-				ps.setTime(3, h);
-				ps.setLong(4, idTurno);
-				try (ResultSet rs = ps.executeQuery()) {
-					if (rs.next())
-						throw new IllegalStateException("Hay otro turno en ese horario.");
-				}
-			}
-
-			try (PreparedStatement ps = c.prepareStatement(upd)) {
-				ps.setDate(1, f);
-				ps.setTime(2, h);
-				ps.setLong(3, idTurno);
-				ps.executeUpdate();
-			}
-
-			c.commit();
 		} catch (SQLException e) {
-			throw new RuntimeException("Error reprogramando turno: " + e.getMessage(), e);
+			throw new RuntimeException("Error obteniendo turno", e);
+		}
+
+		if (idMedico <= 0)
+			throw new IllegalStateException("Turno inexistente o no te pertenece");
+
+		// validación de solape con otros turnos
+		String qSolape = """
+				    SELECT 1
+				    FROM turnos t
+				    WHERE t.id_medico = ? AND t.fecha = ? AND t.hora = ?
+				      AND t.estado IN ('Reservado','Confirmado')
+				      AND t.id <> ?
+				""";
+		try (Connection c = Conexion.getInstance().getConnection();
+				PreparedStatement ps = c.prepareStatement(qSolape)) {
+			ps.setLong(1, idMedico);
+			ps.setDate(2, f);
+			ps.setTime(3, h);
+			ps.setLong(4, idTurno);
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next())
+					throw new IllegalStateException("Hay otro turno en ese horario");
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException("Error verificando solape", e);
+		}
+
+		// actualizar fecha hora
+		String upd = """
+				    UPDATE turnos t
+				    JOIN medicos m ON m.id = t.id_medico
+				    JOIN usuarios u ON u.id_usuario = m.id_usuario
+				    SET t.fecha = ?, t.hora = ?,
+				        t.estado = CASE WHEN t.estado = 'Cancelado' THEN 'Reservado' ELSE t.estado END
+				    WHERE t.id = ? AND u.usuario_login = ?
+				""";
+		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(upd)) {
+			ps.setDate(1, f);
+			ps.setTime(2, h);
+			ps.setLong(3, idTurno);
+			ps.setString(4, medico.getUsuario());
+			ps.executeUpdate();
+		} catch (SQLException e) {
+			throw new RuntimeException("Error reprogramando turno", e);
 		}
 	}
 
+	// validar que el usuario exista
+	public boolean validarPaciente(String usernamePaciente) {
+		if (usernamePaciente == null || usernamePaciente.isBlank())
+			return false;
+
+		final String q = """
+				    SELECT 1
+				    FROM usuarios u
+				    JOIN pacientes p ON p.id_usuario = u.id_usuario
+				    WHERE u.usuario_login = ?
+				""";
+
+		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(q)) {
+			ps.setString(1, usernamePaciente.trim());
+			try (ResultSet rs = ps.executeQuery()) {
+				return rs.next();
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException("Error verificando paciente", e);
+		}
+	}
+
+	// registra la consulta, primero valida que exista id de turno
 	public long registrarConsulta(String usernamePaciente, Consulta consulta) {
-		String sql = "INSERT INTO consultas(motivo, diagnostico, tratamiento, fecha, id_medico, id_paciente, recomendaciones) "
-				+ "VALUES (?, ?, ?, ?, "
-				+ " (SELECT m.id FROM medicos m JOIN usuarios u ON u.id_usuario=m.id_usuario WHERE u.usuario_login=?), "
-				+ " (SELECT p.id FROM pacientes p JOIN usuarios u ON u.id_usuario=p.id_usuario WHERE u.usuario_login=?), "
-				+ " ?)";
+		if (usernamePaciente == null || usernamePaciente.isBlank())
+			throw new IllegalArgumentException("Usuario del paciente requerido");
+		if (consulta == null)
+			throw new IllegalArgumentException("Consulta requerida");
+		if (consulta.getMotivo() == null || consulta.getMotivo().isBlank())
+			throw new IllegalArgumentException("Motivo requerido");
+
+		final String qCheckPaciente = """
+				    SELECT 1
+				    FROM usuarios u
+				    JOIN pacientes p ON p.id_usuario = u.id_usuario
+				    WHERE u.usuario_login = ?
+				""";
+		try (Connection c = Conexion.getInstance().getConnection();
+				PreparedStatement ps = c.prepareStatement(qCheckPaciente)) {
+			ps.setString(1, usernamePaciente);
+			try (ResultSet rs = ps.executeQuery()) {
+				if (!rs.next())
+					throw new IllegalStateException("Paciente inexistente");
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException("Error verificando la existencia del paciente", e);
+		}
+
+		final String ins = """
+				    INSERT INTO consultas(motivo, diagnostico, tratamiento, fecha, id_medico, id_paciente, seguimiento)
+				    VALUES (?, ?, ?, ?,
+				            (SELECT m.id FROM medicos m JOIN usuarios u ON u.id_usuario=m.id_usuario WHERE u.usuario_login=?),
+				            (SELECT p.id FROM pacientes p JOIN usuarios u ON u.id_usuario=p.id_usuario WHERE u.usuario_login=?),
+				            ?)
+				""";
 		Timestamp ts = new Timestamp(consulta.getFecha().getTime());
 		try (Connection c = Conexion.getInstance().getConnection();
-				PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+				PreparedStatement ps = c.prepareStatement(ins, Statement.RETURN_GENERATED_KEYS)) {
 			ps.setString(1, consulta.getMotivo());
 			ps.setString(2, consulta.getDiagnostico());
 			ps.setString(3, consulta.getTratamiento());
@@ -307,7 +439,7 @@ public class ControllerMedico {
 				return rs.next() ? rs.getLong(1) : 0L;
 			}
 		} catch (SQLException e) {
-			throw new RuntimeException("Error registrando consulta: " + e.getMessage(), e);
+			throw new RuntimeException("Error registrando consulta", e);
 		}
 	}
 }
