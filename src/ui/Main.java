@@ -13,7 +13,6 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
-import java.util.Optional;
 import java.time.format.ResolverStyle;
 import java.time.temporal.TemporalAdjusters;
 
@@ -42,21 +41,63 @@ public class Main {
 		// login
 		ControllerUsuario cu = new ControllerUsuario();
 		Usuario u = null;
-		while (u == null) {
-			String user = JOptionPane.showInputDialog(null, "Usuario:");
-			if (user == null)
-				return;
-			String pass = JOptionPane.showInputDialog(null, "Contraseña:");
-			if (pass == null)
-				return;
 
-			Optional<Usuario> opt = cu.login(user.trim(), pass.trim());
-			if (opt == null || opt.isEmpty()) {
-				JOptionPane.showMessageDialog(null, "Credenciales inválidas intente nuevamente");
-			} else {
-				u = opt.get();
+		while (u == null) {
+
+			String user = null;
+			while (true) {
+				user = JOptionPane.showInputDialog(null, "Usuario:");
+				if (user == null)
+					return;
+				user = user.trim();
+				if (user.isEmpty()) {
+					JOptionPane.showMessageDialog(null, "Debe ingresar un nombre de usuario");
+					continue;
+				}
+
+				try {
+					if (!cu.existeUsuario(user)) {
+						JOptionPane.showMessageDialog(null, "El usuario no existe intente nuevamente");
+						continue;
+					}
+				} catch (Exception e) {
+					JOptionPane.showMessageDialog(null, "Error verificando usuario: " + e.getMessage(), "Error",
+							JOptionPane.ERROR_MESSAGE);
+					continue;
+				}
+				break;
+			}
+
+			while (u == null) {
+				String pass = JOptionPane.showInputDialog(null, "Contraseña:");
+				if (pass == null)
+					return;
+				pass = pass.trim();
+				if (pass.isEmpty()) {
+					JOptionPane.showMessageDialog(null, "Debe ingresar una contraseña");
+					continue;
+				}
+
+				try {
+					var opt = cu.login(user, pass);
+					if (opt.isEmpty()) {
+						JOptionPane.showMessageDialog(null, "Contraseña incorrecta intente nuevamente");
+						continue;
+					}
+					u = opt.get();
+				} catch (IllegalStateException ise) {
+
+					JOptionPane.showMessageDialog(null, ise.getMessage());
+
+					break;
+				} catch (Exception e) {
+					JOptionPane.showMessageDialog(null, "Error en el login: " + e.getMessage(), "Error",
+							JOptionPane.ERROR_MESSAGE);
+
+				}
 			}
 		}
+
 		JOptionPane.showMessageDialog(null, "Bienvenido " + u.getNombre());
 
 		if (u instanceof Paciente p) {
@@ -217,15 +258,9 @@ public class Main {
 		} else if (u instanceof Medico m) {
 			ControllerMedico cm = new ControllerMedico(m);
 
-			String[] ops = { "Registrar disponibilidad",
-					"Modificar disponibilidad",
-					"Eliminar disponibilidad",
-					"Visualizar agenda",
-					"Confirmar asistencia",
-					"Cancelar turno",
-					"Reprogramar turno",
-					"Registrar consulta",
-					"Salir" };
+			String[] ops = { "Registrar disponibilidad", "Modificar disponibilidad", "Eliminar disponibilidad",
+					"Visualizar agenda", "Confirmar asistencia", "Cancelar turno", "Reprogramar turno",
+					"Registrar consulta", "Salir" };
 
 			boolean salir = false;
 			while (!salir) {
@@ -281,7 +316,7 @@ public class Main {
 									JOptionPane.showMessageDialog(null, "La fecha debe ser futura");
 									continue;
 								}
-								break; 
+								break;
 							} catch (Exception e) {
 								JOptionPane.showMessageDialog(null, "Fecha inválida");
 							}
@@ -341,7 +376,8 @@ public class Main {
 						if (registros > 0) {
 							JOptionPane.showMessageDialog(null, "Disponibilidad semanal registrada");
 						} else {
-							JOptionPane.showMessageDialog(null, "Ya tiene agenda creada para esa fecha, revise los datos ingresados");
+							JOptionPane.showMessageDialog(null,
+									"Ya tiene agenda creada para esa fecha, revise los datos ingresados");
 						}
 					}
 
@@ -572,31 +608,31 @@ public class Main {
 						while (true) {
 							String sId = JOptionPane.showInputDialog(null, "Nro de turno a cancelar:");
 							if (sId == null)
-								break; 
+								break;
 							sId = sId.trim();
 
 							if (sId.isEmpty() || !sId.matches("\\d+")) {
 								JOptionPane.showMessageDialog(null, "Id inválido");
-								continue; 
+								continue;
 							}
 
 							long tmp = Long.parseLong(sId);
 							try {
-								if (!cm.validarIdTurno(tmp)) { 
+								if (!cm.validarIdTurno(tmp)) {
 									JOptionPane.showMessageDialog(null, "Turno inexistente");
-									continue; 
+									continue;
 								}
 								idTurno = tmp;
-								break; 
+								break;
 							} catch (Exception e) {
 								JOptionPane.showMessageDialog(null, "Error validando turno: " + e.getMessage(), "Error",
 										JOptionPane.ERROR_MESSAGE);
-								break; 
+								break;
 							}
 						}
 
 						if (idTurno == null)
-							break; 
+							break;
 
 						try {
 							cm.cancelarTurno(idTurno);
