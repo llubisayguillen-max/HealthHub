@@ -198,32 +198,36 @@ public class ControllerMedico {
 	}
 
 	// visualiza la agenda fecha y hora
-	public List<Date> visualizarAgenda(java.sql.Date desde, java.sql.Date hasta) {
+	public List<String> visualizarAgenda(java.sql.Date desde, java.sql.Date hasta, boolean incluirCancelados) {
 		if (desde == null || hasta == null)
 			throw new IllegalArgumentException("Ingrese fecha");
 		if (hasta.before(desde))
 			throw new IllegalArgumentException("Rango de fechas inválido");
 
 		final String sql = """
-				    SELECT t.fecha, t.hora
+				    SELECT t.fecha, t.hora, t.estado
 				    FROM turnos t
 				    JOIN medicos m ON m.id = t.id_medico
 				    JOIN usuarios u ON u.id_usuario = m.id_usuario
-				    WHERE u.usuario_login=? AND t.fecha BETWEEN ? AND ?
+				    WHERE u.usuario_login=? 
+				    AND t.fecha BETWEEN ? AND ?
+				    AND ( ? OR t.estado <> 'Cancelado' )
 				    ORDER BY t.fecha, t.hora
 				""";
 
-		List<Date> agenda = new ArrayList<>();
-		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+		List<String> agenda = new ArrayList<>();
+		try (Connection c = Conexion.getInstance().getConnection(); 
+				PreparedStatement ps = c.prepareStatement(sql)) {
 			ps.setString(1, medico.getUsuario());
 			ps.setDate(2, desde);
 			ps.setDate(3, hasta);
+			 ps.setBoolean(4, incluirCancelados);
 			try (ResultSet rs = ps.executeQuery()) {
 				while (rs.next()) {
-					LocalDate f = rs.getDate("fecha").toLocalDate();
-					LocalTime h = rs.getTime("hora").toLocalTime();
-					LocalDateTime ldt = LocalDateTime.of(f, h);
-					agenda.add(Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant()));
+					var f = rs.getDate("fecha").toLocalDate();
+	                var h = rs.getTime("hora").toLocalTime();
+	                var estado = rs.getString("estado");
+	                agenda.add(f + " " + h + " | estado: " + estado);
 				}
 			}
 		} catch (SQLException e) {

@@ -550,12 +550,19 @@ public class Main {
 						if (d2 == null)
 							break;
 
-						var agenda = cm.visualizarAgenda(java.sql.Date.valueOf(d1), java.sql.Date.valueOf(d2));
-						if (agenda.isEmpty()) {
-							JOptionPane.showMessageDialog(null, "No hay turnos en ese rango");
+						int inc = JOptionPane.showConfirmDialog(null, "¿Incluir turnos cancelados?", "Filtro de estado",
+								JOptionPane.YES_NO_OPTION);
+						boolean incluirCancelados = (inc == JOptionPane.YES_OPTION);
+						var filas = cm.visualizarAgenda(java.sql.Date.valueOf(d1), java.sql.Date.valueOf(d2),
+								incluirCancelados);
+
+						if (filas.isEmpty()) {
+							JOptionPane.showMessageDialog(null, "No hay turnos agendados"
+									+ (incluirCancelados ? "" : ""));
 						} else {
 							StringBuilder sb = new StringBuilder("Agenda:\n");
-							agenda.forEach(d -> sb.append("- ").append(d).append("\n"));
+							for (String f : filas)
+								sb.append("- ").append(f).append("\n");
 							JTextArea ta = new JTextArea(sb.toString());
 							ta.setEditable(false);
 							JOptionPane.showMessageDialog(null, new JScrollPane(ta));
