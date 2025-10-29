@@ -13,21 +13,35 @@ public class ControllerUsuario {
 	// Login
 
 	public Optional<Usuario> login(String username, String password) {
+		
+        // validación de campos vacíos
+        if (username == null || username.trim().isEmpty()) {
+            throw new IllegalArgumentException("Ingrese el nombre de usuario");
+        }
+        if (password == null || password.trim().isEmpty()) {
+            throw new IllegalArgumentException("Ingrese la contraseña");
+        }
+        
+        username = username.trim();
+        
 		String sql = "SELECT id_usuario, usuario_login, contrasenia, nombre, apellido, rol, bloqueado "
 				+ "FROM usuarios WHERE usuario_login=?";
-		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+		
+		 try (Connection c = Conexion.getInstance().getConnection();
+	             PreparedStatement ps = c.prepareStatement(sql)) {
 
-			ps.setString(1, username);
+	            ps.setString(1, username);
 
-			try (ResultSet rs = ps.executeQuery()) {
-				if (!rs.next())
-					return Optional.empty();
+	            try (ResultSet rs = ps.executeQuery()) {
+	                if (!rs.next()) {
+	                    return Optional.empty();
+	                }
 
 				String passBD = rs.getString("contrasenia");
 				boolean bloqueado = rs.getBoolean("bloqueado");
 
 				if (bloqueado)
-					return Optional.empty();
+					 throw new IllegalStateException("El usuario está bloqueado");
 
 				if (!password.equals(passBD))
 					return Optional.empty();
