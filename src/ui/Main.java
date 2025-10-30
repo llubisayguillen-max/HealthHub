@@ -220,35 +220,27 @@ public class Main {
 
 							String usernameMedico = medElegido.split("\\(")[1].replace(")", "");
 
-							// elegir fecha
-							String sFecha = JOptionPane.showInputDialog(null, "Fecha (DD/MM/YYYY):");
-							if (sFecha == null)
-								break;
-
-							LocalDate fecha;
-							try {
-								fecha = LocalDate.parse(sFecha.trim(), F_DDMMYYYY);
-							} catch (Exception e) {
-								JOptionPane.showMessageDialog(null, "Formato de fecha inválido.");
-								break;
-							}
-
-							// elegir horario según médico
+							// obtener franjas disponibles
 							var franjas = cp.obtenerHorariosDisponibles(usernameMedico);
 							if (franjas.isEmpty()) {
 								JOptionPane.showMessageDialog(null, "Este médico no tiene horarios disponibles.");
 								break;
 							}
 
-							String franjaElegida = (String) JOptionPane.showInputDialog(null, "Selecciona horario",
-									"Horario", JOptionPane.PLAIN_MESSAGE, null, franjas.toArray(), franjas.get(0));
+							String franjaElegida = (String) JOptionPane.showInputDialog(null,
+									"Selecciona fecha y horario", "Franja disponible", JOptionPane.PLAIN_MESSAGE, null,
+									franjas.toArray(), franjas.get(0));
 							if (franjaElegida == null)
 								break;
 
-							// convertir horario + fecha a Date y reservar turno
-							String horaInicio = franjaElegida.split(" - ")[0].trim();
-							LocalTime hora = LocalTime.parse(horaInicio, DateTimeFormatter.ofPattern("HH:mm[:ss]"));
-							ZonedDateTime zdt = fecha.atTime(hora).atZone(java.time.ZoneId.systemDefault());
+							// convertir franja seleccionada a Date
+
+							String fechaStr = franjaElegida.split(" - ")[0].trim();
+							String horaInicioStr = franjaElegida.split(" - ")[1].split("a")[0].trim();
+
+							LocalDate fecha = LocalDate.parse(fechaStr);
+							LocalTime hora = LocalTime.parse(horaInicioStr);
+							ZonedDateTime zdt = fecha.atTime(hora).atZone(ZoneId.systemDefault());
 							Date fechaHora = Date.from(zdt.toInstant());
 
 							cp.solicitarTurno(usernameMedico, fechaHora);
@@ -925,14 +917,9 @@ public class Main {
 
 		} else if (u instanceof Administrador a) {
 			ControllerAdministrador ca = new ControllerAdministrador(a);
-			String[] ops = { 
-				    "Alta de paciente", "Modificar datos de paciente",
-				    "Alta de médico", "Modificar datos de médico", 
-				    "Listar usuarios", "Eliminar usuario",
-				    "Bloquear usuario", "Desbloquear usuario",
-				    "Salir"
-				};
-
+			String[] ops = { "Alta de paciente", "Modificar datos de paciente", "Alta de médico",
+					"Modificar datos de médico", "Listar usuarios", "Eliminar usuario", "Bloquear usuario",
+					"Desbloquear usuario", "Salir" };
 
 			boolean salir = false;
 			while (!salir) {
@@ -1275,37 +1262,42 @@ public class Main {
 							JOptionPane.showMessageDialog(null, new JScrollPane(ta));
 						}
 					}
-					
+
 					// BLOQUEAR USUARIO ----------------
 					case "Bloquear usuario" -> {
-					    String usr;
-					    while (true) {
-					        usr = JOptionPane.showInputDialog("Usuario a bloquear:");
-					        if (usr == null) break;
-					        if (!usr.trim().isEmpty()) break;
-					        JOptionPane.showMessageDialog(null, "Ingrese el usuario a bloquear.");
-					    }
-					    if (usr == null) continue;
+						String usr;
+						while (true) {
+							usr = JOptionPane.showInputDialog("Usuario a bloquear:");
+							if (usr == null)
+								break;
+							if (!usr.trim().isEmpty())
+								break;
+							JOptionPane.showMessageDialog(null, "Ingrese el usuario a bloquear.");
+						}
+						if (usr == null)
+							continue;
 
-					    ca.bloquearUsuario(usr.trim());
-					    JOptionPane.showMessageDialog(null, "Usuario bloqueado exitosamente");
+						ca.bloquearUsuario(usr.trim());
+						JOptionPane.showMessageDialog(null, "Usuario bloqueado exitosamente");
 					}
 
 					// DESBLOQUEAR USUARIO ----------------
 					case "Desbloquear usuario" -> {
-					    String usr;
-					    while (true) {
-					        usr = JOptionPane.showInputDialog("Usuario a desbloquear:");
-					        if (usr == null) break;
-					        if (!usr.trim().isEmpty()) break;
-					        JOptionPane.showMessageDialog(null, "Ingrese el usuario a desbloquear.");
-					    }
-					    if (usr == null) continue;
+						String usr;
+						while (true) {
+							usr = JOptionPane.showInputDialog("Usuario a desbloquear:");
+							if (usr == null)
+								break;
+							if (!usr.trim().isEmpty())
+								break;
+							JOptionPane.showMessageDialog(null, "Ingrese el usuario a desbloquear.");
+						}
+						if (usr == null)
+							continue;
 
-					    ca.desbloquearUsuario(usr.trim());
-					    JOptionPane.showMessageDialog(null, "Usuario desbloqueado exitosamente");
+						ca.desbloquearUsuario(usr.trim());
+						JOptionPane.showMessageDialog(null, "Usuario desbloqueado exitosamente");
 					}
-
 
 					// ELIMINAR USUARIO ----------------
 					case "Eliminar usuario" -> {
