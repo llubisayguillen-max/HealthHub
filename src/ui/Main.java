@@ -918,7 +918,8 @@ public class Main {
 		} else if (u instanceof Administrador a) {
 			ControllerAdministrador ca = new ControllerAdministrador(a);
 			String[] ops = { "Alta de paciente", "Modificar datos de paciente", "Alta de médico",
-					"Modificar datos de médico", "Listar usuarios", "Eliminar usuario", "Bloquear usuario",
+					"Modificar datos de médico", "Listar usuarios", "Resetear contraseña de usuario",
+					"Eliminar usuario", "Bloquear usuario",
 					"Desbloquear usuario", "Salir" };
 
 			boolean salir = false;
@@ -934,11 +935,13 @@ public class Main {
 
 				try {
 					switch (op) {
-					// ALTA PACIENTE ----------------
+					// alta paciente ----------------
+					
 					case "Alta de paciente" -> {
 						String usr, nom, ape, pass, nro, os;
 
 						// Usuario
+						
 						while (true) {
 							usr = JOptionPane.showInputDialog("Usuario:");
 							if (usr == null)
@@ -951,6 +954,7 @@ public class Main {
 							continue;
 
 						// Nombre
+						
 						while (true) {
 							nom = JOptionPane.showInputDialog("Nombre:");
 							if (nom == null)
@@ -963,6 +967,7 @@ public class Main {
 							continue;
 
 						// Apellido
+						
 						while (true) {
 							ape = JOptionPane.showInputDialog("Apellido:");
 							if (ape == null)
@@ -975,6 +980,7 @@ public class Main {
 							continue;
 
 						// Contraseña
+						
 						while (true) {
 							pass = JOptionPane.showInputDialog("Contraseña:");
 							if (pass == null)
@@ -987,6 +993,7 @@ public class Main {
 							continue;
 
 						// contrato
+						
 						while (true) {
 							nro = JOptionPane.showInputDialog("Número de contrato:");
 							if (nro == null)
@@ -999,6 +1006,7 @@ public class Main {
 							continue;
 
 						// Obra social
+						
 						while (true) {
 							os = JOptionPane.showInputDialog("Obra social:");
 							if (os == null)
@@ -1015,11 +1023,13 @@ public class Main {
 						JOptionPane.showMessageDialog(null, "Paciente registrado exitosamente");
 					}
 
-					// MODIFICAR PACIENTE ----------------
+					// modificar paciente ----------------
+					
 					case "Modificar datos de paciente" -> {
 						String usr, nom, ape, pass, nro, os;
 
 						// Usr a modificar
+						
 						while (true) {
 							usr = JOptionPane.showInputDialog("Usuario del paciente a modificar:");
 							if (usr == null)
@@ -1032,6 +1042,7 @@ public class Main {
 							continue;
 
 						// Nombre
+						
 						while (true) {
 							nom = JOptionPane.showInputDialog("Nuevo nombre:");
 							if (nom == null)
@@ -1044,6 +1055,7 @@ public class Main {
 							continue;
 
 						// Apellido
+						
 						while (true) {
 							ape = JOptionPane.showInputDialog("Nuevo apellido:");
 							if (ape == null)
@@ -1056,6 +1068,7 @@ public class Main {
 							continue;
 
 						// Contraseña
+						
 						while (true) {
 							pass = JOptionPane.showInputDialog("Nueva contraseña:");
 							if (pass == null)
@@ -1068,6 +1081,7 @@ public class Main {
 							continue;
 
 						// Número de contrato
+						
 						while (true) {
 							nro = JOptionPane.showInputDialog("Nuevo número de contrato:");
 							if (nro == null)
@@ -1080,6 +1094,7 @@ public class Main {
 							continue;
 
 						// Obra social
+						
 						while (true) {
 							os = JOptionPane.showInputDialog("Nueva obra social:");
 							if (os == null)
@@ -1096,7 +1111,8 @@ public class Main {
 						JOptionPane.showMessageDialog(null, "Paciente modificado exitosamente");
 					}
 
-					// ALTA MÉDICO ----------------
+					// alta medico ----------------
+					
 					case "Alta de médico" -> {
 						String usr, nom, ape, pass, matricula, esp;
 
@@ -1171,7 +1187,8 @@ public class Main {
 						JOptionPane.showMessageDialog(null, "Médico registrado exitosamente");
 					}
 
-					// MODIFICAR MÉDICO ----------------
+					// modificar medico ----------------
+					
 					case "Modificar datos de médico" -> {
 						String usr, nom, ape, pass, matricula, esp;
 
@@ -1246,7 +1263,9 @@ public class Main {
 						JOptionPane.showMessageDialog(null, "Médico modificado exitosamente");
 					}
 
-					// LISTAR USUARIOS ----------------
+					// listar usuarios ----------------
+					
+					
 					case "Listar usuarios" -> {
 						String rol = JOptionPane.showInputDialog("Ingrese rol a listar (Paciente o Medico):");
 						if (rol == null)
@@ -1263,7 +1282,8 @@ public class Main {
 						}
 					}
 
-					// BLOQUEAR USUARIO ----------------
+					// bloquear usuario ----------------
+					
 					case "Bloquear usuario" -> {
 						String usr;
 						while (true) {
@@ -1281,7 +1301,8 @@ public class Main {
 						JOptionPane.showMessageDialog(null, "Usuario bloqueado exitosamente");
 					}
 
-					// DESBLOQUEAR USUARIO ----------------
+					// desbloquear usuario ----------------
+					
 					case "Desbloquear usuario" -> {
 						String usr;
 						while (true) {
@@ -1298,8 +1319,35 @@ public class Main {
 						ca.desbloquearUsuario(usr.trim());
 						JOptionPane.showMessageDialog(null, "Usuario desbloqueado exitosamente");
 					}
+					
+					// resetear pass ----------------
+					
+					case "Resetear contraseña de usuario" -> {
+					    String usr, nuevaPass;
 
-					// ELIMINAR USUARIO ----------------
+					    while (true) {
+					        usr = JOptionPane.showInputDialog("Usuario a resetear contraseña:");
+					        if (usr == null) break;
+					        if (!usr.trim().isEmpty()) break;
+					        JOptionPane.showMessageDialog(null, "Ingrese el usuario.");
+					    }
+					    if (usr == null) continue;
+
+					    while (true) {
+					        nuevaPass = JOptionPane.showInputDialog("Nueva contraseña para el usuario:");
+					        if (nuevaPass == null) break;
+					        if (!nuevaPass.trim().isEmpty()) break;
+					        JOptionPane.showMessageDialog(null, "La contraseña no puede estar vacía.");
+					    }
+					    if (nuevaPass == null) continue;
+
+					    ca.resetearContrasenia(usr.trim(), nuevaPass.trim());
+					    JOptionPane.showMessageDialog(null, "Contraseña reseteada exitosamente.");
+					}
+
+
+					// eliminar usuario ----------------
+					
 					case "Eliminar usuario" -> {
 						String usr;
 						while (true) {

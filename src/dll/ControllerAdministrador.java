@@ -52,7 +52,7 @@ public class ControllerAdministrador {
         }
     }
 
-    //REGISTRAR PACIENTE -------------------------
+    //registrar paciente -------------------------
 
     public void registrarPaciente(String usuario, String nombre, String apellido, String contrasenia,
                                   int nroContrato, String obraSocial) {
@@ -107,7 +107,7 @@ public class ControllerAdministrador {
         }
     }
 
-    //MODIFICAR PACIENTE -------------------------
+    //modificar paciente -------------------------
 
     public void modificarPaciente(String usuario, String nombre, String apellido, String contrasenia,
                                   int nroContrato, String obraSocial) {
@@ -115,6 +115,7 @@ public class ControllerAdministrador {
         if (!existeUsuario(usuario))
             throw new IllegalArgumentException("El usuario '" + usuario + "' no existe.");
 
+        // Validaciones de campos
         validarNoVacio("Nombre", nombre);
         validarNoVacio("Apellido", apellido);
         validarNoVacio("Contraseña", contrasenia);
@@ -149,7 +150,7 @@ public class ControllerAdministrador {
         }
     }
 
-    //DAR DE BAJA PACIENTE -------------------------
+    //dar baja paciente -------------------------
 
     public void eliminarPaciente(String usuario) {
         if (!existeUsuario(usuario))
@@ -158,11 +159,11 @@ public class ControllerAdministrador {
         eliminarUsuario(usuario);
     }
 
-    //REGISTRAR MÉDICO -------------------------
+    //registrar medico -------------------------
 
     public void registrarMedico(String usuario, String nombre, String apellido, String contrasenia,
                                 String matricula, String especialidad) {
-
+        // Validaciones de campos
         validarNoVacio("Usuario", usuario);
         validarNoVacio("Nombre", nombre);
         validarNoVacio("Apellido", apellido);
@@ -211,7 +212,7 @@ public class ControllerAdministrador {
         }
     }
 
-    //MODIFICAR MÉDICO -------------------------
+    //modificar medico -------------------------
 
     public void modificarMedico(String usuario, String nombre, String apellido, String contrasenia,
                                 String matricula, String especialidad) {
@@ -219,6 +220,7 @@ public class ControllerAdministrador {
         if (!existeUsuario(usuario))
             throw new IllegalArgumentException("El médico '" + usuario + "' no existe.");
 
+        // Validaciones de campos
         validarNoVacio("Nombre", nombre);
         validarNoVacio("Apellido", apellido);
         validarNoVacio("Contraseña", contrasenia);
@@ -257,7 +259,7 @@ public class ControllerAdministrador {
         }
     }
 
-    //DAR DE BAJA MÉDICO -------------------------
+    //dar baja medico -------------------------
 
     public void eliminarMedico(String usuario) {
         if (!existeUsuario(usuario))
@@ -266,7 +268,7 @@ public class ControllerAdministrador {
         eliminarUsuario(usuario);
     }
 
-  //ELIMINAR USUARIO (GENERAL) -------------------------
+  //eliminar usuario (cualquier usr) -------------------------
 
     public void eliminarUsuario(String usuario) {
         String sql = "DELETE FROM usuarios WHERE usuario_login=?";
@@ -286,7 +288,7 @@ public class ControllerAdministrador {
     }
 
 
-    //LISTAR USUARIOS POR ROL -------------------------
+    //listar usuarios -------------------------
 
     public List<String> listarUsuariosPorRol(String rol) {
         String sql = "SELECT usuario_login, nombre, apellido FROM usuarios WHERE rol=?";
@@ -309,9 +311,45 @@ public class ControllerAdministrador {
         return list;
     }
     
-  //BLOQUEAR USUARIO -------------------------
+  //resetear pass -------------------------
+    public void resetearContrasenia(String usuario, String nuevaContrasenia) {
+
+    	
+        // Validaciones de campos
+        validarNoVacio("Usuario", usuario);
+        validarNoVacio("Nueva contraseña", nuevaContrasenia);
+
+        if (!existeUsuario(usuario)) {
+            throw new IllegalArgumentException("El usuario '" + usuario + "' no existe.");
+        }
+
+        String sql = "UPDATE usuarios SET contrasenia=? WHERE usuario_login=?";
+
+        try (Connection c = Conexion.getInstance().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+
+            String passEncriptada = Encriptador.encriptar(nuevaContrasenia);
+
+            ps.setString(1, passEncriptada);
+            ps.setString(2, usuario);
+
+            int filas = ps.executeUpdate();
+
+            if (filas == 0) {
+                throw new RuntimeException("No se pudo resetear la contraseña. Intente nuevamente.");
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Error al resetear contraseña: " + e.getMessage(), e);
+        }
+    }
+
+    
+  //bloquear usr -------------------------
     public void bloquearUsuario(String usuario) {
 
+    	
+        // Validaciones de campos
         validarNoVacio("Usuario", usuario);
 
         if (!existeUsuario(usuario)) {
@@ -335,9 +373,10 @@ public class ControllerAdministrador {
         }
     }
 
-    //DESBLOQUEAR USUARIO -------------------------
+    //desbloquear usr -------------------------
     public void desbloquearUsuario(String usuario) {
 
+        // Validaciones de campos
         validarNoVacio("Usuario", usuario);
 
         if (!existeUsuario(usuario)) {
