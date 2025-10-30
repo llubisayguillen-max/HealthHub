@@ -13,35 +13,34 @@ public class ControllerUsuario {
 	// Login
 
 	public Optional<Usuario> login(String username, String password) {
-		
-        // validación de campos vacíos
-        if (username == null || username.trim().isEmpty()) {
-            throw new IllegalArgumentException("Ingrese el nombre de usuario");
-        }
-        if (password == null || password.trim().isEmpty()) {
-            throw new IllegalArgumentException("Ingrese la contraseña");
-        }
-        
-        username = username.trim();
-        
+
+		// validación de campos vacíos
+		if (username == null || username.trim().isEmpty()) {
+			throw new IllegalArgumentException("Ingrese el nombre de usuario");
+		}
+		if (password == null || password.trim().isEmpty()) {
+			throw new IllegalArgumentException("Ingrese la contraseña");
+		}
+
+		username = username.trim();
+
 		String sql = "SELECT id_usuario, usuario_login, contrasenia, nombre, apellido, rol, bloqueado "
 				+ "FROM usuarios WHERE usuario_login=?";
-		
-		 try (Connection c = Conexion.getInstance().getConnection();
-	             PreparedStatement ps = c.prepareStatement(sql)) {
 
-	            ps.setString(1, username);
+		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
 
-	            try (ResultSet rs = ps.executeQuery()) {
-	                if (!rs.next()) {
-	                    return Optional.empty();
-	                }
+			ps.setString(1, username);
+
+			try (ResultSet rs = ps.executeQuery()) {
+				if (!rs.next()) {
+					return Optional.empty();
+				}
 
 				String passBD = rs.getString("contrasenia");
 				boolean bloqueado = rs.getBoolean("bloqueado");
 
 				if (bloqueado)
-					 throw new IllegalStateException("El usuario está bloqueado");
+					throw new IllegalStateException("El usuario está bloqueado");
 
 				if (!password.equals(passBD))
 					return Optional.empty();
@@ -100,43 +99,6 @@ public class ControllerUsuario {
 
 		} catch (SQLException e) {
 			throw new RuntimeException("Error en login", e);
-		}
-	}
-
-	// Bloque/desbloqueo
-	public void bloquearUsuario(long idUsuario, boolean bloquear) {
-		String sql = "UPDATE usuarios SET bloqueado=? WHERE id_usuario=?";
-		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
-			ps.setBoolean(1, bloquear);
-			ps.setLong(2, idUsuario);
-			int filas = ps.executeUpdate();
-			if (filas == 0)
-				throw new IllegalArgumentException("No se encontró el usuario con ID " + idUsuario);
-		} catch (SQLException e) {
-			throw new RuntimeException("Error actualizando estado de usuario", e);
-		}
-	}
-
-	// Reset Contraseña
-	public void resetearContrasena(long idUsuario, String nuevaContrasena) {
-		if (nuevaContrasena == null || nuevaContrasena.trim().isEmpty()) {
-			throw new IllegalArgumentException("La nueva contraseña no puede estar vacía.");
-		}
-
-		String sql = "UPDATE usuarios SET contrasenia=? WHERE id_usuario=?";
-		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
-
-			// Encriptador
-			String passEncriptada = Encriptador.encriptar(nuevaContrasena);
-			ps.setString(1, passEncriptada);
-			ps.setLong(2, idUsuario);
-
-			int filas = ps.executeUpdate();
-			if (filas == 0)
-				throw new IllegalArgumentException("No se encontró el usuario con ID " + idUsuario);
-
-		} catch (SQLException e) {
-			throw new RuntimeException("Error reseteando contraseña", e);
 		}
 	}
 
