@@ -787,8 +787,14 @@ public class Main {
 
 		} else if (u instanceof Administrador a) {
 			ControllerAdministrador ca = new ControllerAdministrador(a);
-			String[] ops = { "Alta de paciente", "Modificar datos de paciente", "Alta de médico",
-					"Modificar datos de médico", "Listar usuarios", "Eliminar usuario", "Salir" };
+			String[] ops = { 
+				    "Alta de paciente", "Modificar datos de paciente",
+				    "Alta de médico", "Modificar datos de médico", 
+				    "Listar usuarios", "Eliminar usuario",
+				    "Bloquear usuario", "Desbloquear usuario",
+				    "Salir"
+				};
+
 
 			boolean salir = false;
 			while (!salir) {
@@ -1131,6 +1137,37 @@ public class Main {
 							JOptionPane.showMessageDialog(null, new JScrollPane(ta));
 						}
 					}
+					
+					// BLOQUEAR USUARIO ----------------
+					case "Bloquear usuario" -> {
+					    String usr;
+					    while (true) {
+					        usr = JOptionPane.showInputDialog("Usuario a bloquear:");
+					        if (usr == null) break;
+					        if (!usr.trim().isEmpty()) break;
+					        JOptionPane.showMessageDialog(null, "Ingrese el usuario a bloquear.");
+					    }
+					    if (usr == null) continue;
+
+					    ca.bloquearUsuario(usr.trim());
+					    JOptionPane.showMessageDialog(null, "Usuario bloqueado exitosamente");
+					}
+
+					// DESBLOQUEAR USUARIO ----------------
+					case "Desbloquear usuario" -> {
+					    String usr;
+					    while (true) {
+					        usr = JOptionPane.showInputDialog("Usuario a desbloquear:");
+					        if (usr == null) break;
+					        if (!usr.trim().isEmpty()) break;
+					        JOptionPane.showMessageDialog(null, "Ingrese el usuario a desbloquear.");
+					    }
+					    if (usr == null) continue;
+
+					    ca.desbloquearUsuario(usr.trim());
+					    JOptionPane.showMessageDialog(null, "Usuario desbloqueado exitosamente");
+					}
+
 
 					// ELIMINAR USUARIO ----------------
 					case "Eliminar usuario" -> {

@@ -14,93 +14,90 @@ public class ControllerUsuario {
 
 	public Optional<Usuario> login(String username, String password) {
 
-		// validación de campos vacíos
-		if (username == null || username.trim().isEmpty()) {
-			throw new IllegalArgumentException("Ingrese el nombre de usuario");
-		}
-		if (password == null || password.trim().isEmpty()) {
-			throw new IllegalArgumentException("Ingrese la contraseña");
-		}
+	    if (username == null || username.trim().isEmpty())
+	        throw new IllegalArgumentException("Ingrese el nombre de usuario");
 
-		username = username.trim();
+	    if (password == null || password.trim().isEmpty())
+	        throw new IllegalArgumentException("Ingrese la contraseña");
 
-		String sql = "SELECT id_usuario, usuario_login, contrasenia, nombre, apellido, rol, bloqueado "
-				+ "FROM usuarios WHERE usuario_login=?";
+	    username = username.trim();
 
-		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+	    String sql = "SELECT id_usuario, usuario_login, contrasenia, nombre, apellido, rol, bloqueado " +
+	                 "FROM usuarios WHERE usuario_login=?";
 
-			ps.setString(1, username);
+	    try (Connection c = Conexion.getInstance().getConnection();
+	         PreparedStatement ps = c.prepareStatement(sql)) {
 
-			try (ResultSet rs = ps.executeQuery()) {
-				if (!rs.next()) {
-					return Optional.empty();
-				}
+	        ps.setString(1, username);
 
-				String passBD = rs.getString("contrasenia");
-				boolean bloqueado = rs.getBoolean("bloqueado");
+	        try (ResultSet rs = ps.executeQuery()) {
+	            if (!rs.next())
+	                return Optional.empty();
 
-				if (bloqueado)
-					throw new IllegalStateException("El usuario está bloqueado");
+	            String passBD = rs.getString("contrasenia");
+	            boolean bloqueado = rs.getBoolean("bloqueado");
 
-				if (!password.equals(passBD))
-					return Optional.empty();
+	            if (bloqueado)
+	                throw new IllegalStateException("El usuario está bloqueado. Contacte al administrador.");
 
-				String rol = rs.getString("rol");
-				String nom = rs.getString("nombre");
-				String ape = rs.getString("apellido");
-				long idUsuario = rs.getLong("id_usuario");
+	            String passIngresadaEncriptada = Encriptador.encriptar(password);
 
-				switch (rol == null ? "" : rol.trim().toLowerCase()) {
-				case "paciente" -> {
-					String q = "SELECT nro_contrato, obra_social FROM pacientes WHERE id_usuario=?";
-					try (PreparedStatement ps2 = c.prepareStatement(q)) {
-						ps2.setLong(1, idUsuario);
-						try (ResultSet rp = ps2.executeQuery()) {
-							int nro = 0;
-							String os = "";
-							if (rp.next()) {
-								nro = rp.getInt("nro_contrato");
-								os = rp.getString("obra_social");
-							}
-							return Optional.of(new Paciente(nom, ape, username, passBD, nro, os, null));
-						}
-					}
-				}
-				case "medico" -> {
-					String q = "SELECT matricula, especialidad FROM medicos WHERE id_usuario=?";
-					try (PreparedStatement ps2 = c.prepareStatement(q)) {
-						ps2.setLong(1, idUsuario);
-						try (ResultSet rm = ps2.executeQuery()) {
-							int mat = 0;
-							String esp = "";
-							if (rm.next()) {
-								String mStr = rm.getString("matricula");
-								try {
-									String digits = mStr == null ? "" : mStr.replaceAll("\\D+", "");
-									mat = digits.isEmpty() ? 0 : Integer.parseInt(digits);
-								} catch (Exception ignore) {
-									mat = 0;
-								}
-								esp = rm.getString("especialidad");
-							}
-							return Optional.of(new Medico(nom, ape, username, passBD, mat, esp));
-						}
-					}
-				}
-				case "administrador" -> {
-					String sector = "Administración";
-					return Optional.of(new Administrador(nom, ape, username, passBD, sector));
-				}
-				default -> {
-					return Optional.empty();
-				}
-				}
-			}
+	            if (!passIngresadaEncriptada.equals(passBD))
+	                return Optional.empty();
 
-		} catch (SQLException e) {
-			throw new RuntimeException("Error en login", e);
-		}
+	            String rol = rs.getString("rol");
+	            String nom = rs.getString("nombre");
+	            String ape = rs.getString("apellido");
+	            long idUsuario = rs.getLong("id_usuario");
+
+	            switch (rol == null ? "" : rol.trim().toLowerCase()) {
+	                case "paciente" -> {
+	                    String q = "SELECT nro_contrato, obra_social FROM pacientes WHERE id_usuario=?";
+	                    try (PreparedStatement ps2 = c.prepareStatement(q)) {
+	                        ps2.setLong(1, idUsuario);
+	                        try (ResultSet rp = ps2.executeQuery()) {
+	                            int nro = 0;
+	                            String os = "";
+	                            if (rp.next()) {
+	                                nro = rp.getInt("nro_contrato");
+	                                os = rp.getString("obra_social");
+	                            }
+	                            return Optional.of(new Paciente(nom, ape, username, passBD, nro, os, null));
+	                        }
+	                    }
+	                }
+	                case "medico" -> {
+	                    String q = "SELECT matricula, especialidad FROM medicos WHERE id_usuario=?";
+	                    try (PreparedStatement ps2 = c.prepareStatement(q)) {
+	                        ps2.setLong(1, idUsuario);
+	                        try (ResultSet rm = ps2.executeQuery()) {
+	                            int mat = 0;
+	                            String esp = "";
+	                            if (rm.next()) {
+	                                String mStr = rm.getString("matricula");
+	                                try {
+	                                    String digits = mStr == null ? "" : mStr.replaceAll("\\D+", "");
+	                                    mat = digits.isEmpty() ? 0 : Integer.parseInt(digits);
+	                                } catch (Exception ignore) {}
+	                                esp = rm.getString("especialidad");
+	                            }
+	                            return Optional.of(new Medico(nom, ape, username, passBD, mat, esp));
+	                        }
+	                    }
+	                }
+	                case "administrador" -> {
+	                    return Optional.of(new Administrador(nom, ape, username, passBD, "Administración"));
+	                }
+	                default -> {
+	                    return Optional.empty();
+	                }
+	            }
+	        }
+	    } catch (SQLException e) {
+	        throw new RuntimeException("Error en login", e);
+	    }
 	}
+
 
 	// Validación Usuario
 	public boolean existeUsuario(String username) {

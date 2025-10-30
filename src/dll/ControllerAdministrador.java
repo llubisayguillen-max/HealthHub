@@ -308,4 +308,57 @@ public class ControllerAdministrador {
         }
         return list;
     }
+    
+  //BLOQUEAR USUARIO -------------------------
+    public void bloquearUsuario(String usuario) {
+
+        validarNoVacio("Usuario", usuario);
+
+        if (!existeUsuario(usuario)) {
+            throw new IllegalArgumentException("El usuario '" + usuario + "' no existe.");
+        }
+
+        String sql = "UPDATE usuarios SET bloqueado = 1 WHERE usuario_login=? AND bloqueado = 0";
+
+        try (Connection c = Conexion.getInstance().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+
+            ps.setString(1, usuario);
+            int rows = ps.executeUpdate();
+
+            if (rows == 0) {
+                throw new IllegalStateException("El usuario ya está bloqueado o no se pudo bloquear.");
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Error al bloquear usuario", e);
+        }
+    }
+
+    //DESBLOQUEAR USUARIO -------------------------
+    public void desbloquearUsuario(String usuario) {
+
+        validarNoVacio("Usuario", usuario);
+
+        if (!existeUsuario(usuario)) {
+            throw new IllegalArgumentException("El usuario '" + usuario + "' no existe.");
+        }
+
+        String sql = "UPDATE usuarios SET bloqueado = 0 WHERE usuario_login=? AND bloqueado = 1";
+
+        try (Connection c = Conexion.getInstance().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+
+            ps.setString(1, usuario);
+            int rows = ps.executeUpdate();
+
+            if (rows == 0) {
+                throw new IllegalStateException("El usuario no está bloqueado o no se pudo desbloquear.");
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Error al desbloquear usuario", e);
+        }
+    }
+
 }
