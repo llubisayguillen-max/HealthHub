@@ -23,7 +23,6 @@ public class ControllerPaciente {
 	}
 
 	// Filtra por especialidad
-
 	public List<Medico> filtrarPorEspecialidad(String especialidad) {
 		if (especialidad == null)
 			especialidad = "";
@@ -37,7 +36,6 @@ public class ControllerPaciente {
 
 		List<Medico> res = new ArrayList<>();
 		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
-
 			ps.setString(1, "%" + especialidad + "%");
 			try (ResultSet rs = ps.executeQuery()) {
 				while (rs.next()) {
@@ -64,28 +62,29 @@ public class ControllerPaciente {
 		return lista.toArray(new String[0]);
 	}
 
-	// Horarios disponibles médico
-
+	// Mostrar fecha + horarios disponibles
 	public List<String> obtenerHorariosDisponibles(String usernameMedico) {
 		if (usernameMedico == null || usernameMedico.trim().isEmpty())
 			throw new IllegalArgumentException("Debe seleccionar un médico válido.");
 
 		String sql = """
-				SELECT md.hora_inicio, md.hora_fin
+				SELECT md.fecha, md.hora_inicio, md.hora_fin
 				FROM medico_disponibilidad md
 				JOIN medicos m ON m.id = md.id_medico
 				JOIN usuarios u ON u.id_usuario = m.id_usuario
 				WHERE u.usuario_login = ?
-				ORDER BY md.hora_inicio
+				ORDER BY md.fecha, md.hora_inicio
 				""";
 
 		List<String> franjas = new ArrayList<>();
 		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
-
 			ps.setString(1, usernameMedico);
 			try (ResultSet rs = ps.executeQuery()) {
 				while (rs.next()) {
-					franjas.add(rs.getTime("hora_inicio") + " - " + rs.getTime("hora_fin"));
+					Date fecha = rs.getDate("fecha");
+					Time inicio = rs.getTime("hora_inicio");
+					Time fin = rs.getTime("hora_fin");
+					franjas.add(String.format("%s - %s a %s", fecha, inicio, fin));
 				}
 			}
 		} catch (SQLException e) {
@@ -179,7 +178,7 @@ public class ControllerPaciente {
 		}
 	}
 
-	// turnos activos
+	// Turnos activos
 	public List<Turno> turnosActivos() {
 		String sql = """
 				SELECT t.id, t.fecha, t.hora, t.estado
@@ -192,7 +191,6 @@ public class ControllerPaciente {
 
 		List<Turno> list = new ArrayList<>();
 		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
-
 			ps.setString(1, paciente.getUsuario());
 			try (ResultSet rs = ps.executeQuery()) {
 				while (rs.next()) {
@@ -366,7 +364,6 @@ public class ControllerPaciente {
 
 		String obra = "general";
 		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
-
 			ps.setString(1, paciente.getUsuario());
 			try (ResultSet rs = ps.executeQuery()) {
 				if (rs.next())
