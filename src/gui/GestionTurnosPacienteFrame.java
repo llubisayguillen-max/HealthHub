@@ -30,11 +30,9 @@ public class GestionTurnosPacienteFrame extends JFrame {
 		setMinimumSize(new Dimension(900, 600));
 		setLocationRelativeTo(null);
 
-		// === PANEL PRINCIPAL ===
 		JPanel panelPrincipal = new JPanel(new BorderLayout());
 		panelPrincipal.setBackground(Color.WHITE);
 
-		// === ENCABEZADO ===
 		JPanel panelEncabezado = new JPanel();
 		panelEncabezado.setBackground(new Color(91, 155, 213));
 		panelEncabezado.setPreferredSize(new Dimension(0, 80));
@@ -46,7 +44,7 @@ public class GestionTurnosPacienteFrame extends JFrame {
 		lblTitulo.setForeground(Color.WHITE);
 		panelEncabezado.add(lblTitulo, BorderLayout.CENTER);
 
-		// === TABLA DE TURNOS ===
+		// Tabla turnos
 		modeloTabla = new DefaultTableModel(new Object[] { "Especialidad", "Médico", "Fecha y Hora", "Estado" }, 0) {
 			@Override
 			public boolean isCellEditable(int row, int column) {
@@ -58,25 +56,24 @@ public class GestionTurnosPacienteFrame extends JFrame {
 		JScrollPane scrollTabla = new JScrollPane(tablaTurnos);
 		scrollTabla.setBorder(BorderFactory.createEmptyBorder(20, 50, 20, 50));
 
-		// === Alinear columnas ===
 		DefaultTableCellRenderer izquierda = new DefaultTableCellRenderer();
 		izquierda.setHorizontalAlignment(SwingConstants.LEFT);
 
 		DefaultTableCellRenderer centrado = new DefaultTableCellRenderer();
 		centrado.setHorizontalAlignment(SwingConstants.CENTER);
 
-		tablaTurnos.getColumnModel().getColumn(0).setCellRenderer(izquierda); // Especialidad
-		tablaTurnos.getColumnModel().getColumn(1).setCellRenderer(izquierda); // Médico
-		tablaTurnos.getColumnModel().getColumn(2).setCellRenderer(centrado); // Fecha y Hora
-		tablaTurnos.getColumnModel().getColumn(3).setCellRenderer(centrado); // Estado
+		tablaTurnos.getColumnModel().getColumn(0).setCellRenderer(izquierda);
+		tablaTurnos.getColumnModel().getColumn(1).setCellRenderer(izquierda);
+		tablaTurnos.getColumnModel().getColumn(2).setCellRenderer(centrado);
+		tablaTurnos.getColumnModel().getColumn(3).setCellRenderer(centrado);
 
 		// === Ajustar ancho de columnas ===
-		tablaTurnos.getColumnModel().getColumn(0).setPreferredWidth(100); // Especialidad
-		tablaTurnos.getColumnModel().getColumn(1).setPreferredWidth(150); // Médico
-		tablaTurnos.getColumnModel().getColumn(2).setPreferredWidth(180); // Fecha y Hora
-		tablaTurnos.getColumnModel().getColumn(3).setPreferredWidth(100); // Estado
+		tablaTurnos.getColumnModel().getColumn(0).setPreferredWidth(100);
+		tablaTurnos.getColumnModel().getColumn(1).setPreferredWidth(150);
+		tablaTurnos.getColumnModel().getColumn(2).setPreferredWidth(180);
+		tablaTurnos.getColumnModel().getColumn(3).setPreferredWidth(100);
 
-		// === BOTONES ABAJO ===
+		// Botones
 		JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, 30, 20));
 		panelBotones.setBackground(Color.WHITE);
 
@@ -109,7 +106,6 @@ public class GestionTurnosPacienteFrame extends JFrame {
 		panelBotones.add(btnCancelar);
 		panelBotones.add(btnVolver);
 
-		// === ACCIONES DE BOTONES ===
 		btnNuevo.addActionListener(e -> {
 			NuevoTurnoPacienteFrame nuevoTurno = new NuevoTurnoPacienteFrame(pacienteLogueado, this);
 			nuevoTurno.setVisible(true);
@@ -124,7 +120,7 @@ public class GestionTurnosPacienteFrame extends JFrame {
 			}
 			try {
 				Turno turno = controllerPaciente.turnosActivos().get(fila);
-				controllerPaciente.confirmarAsistencia(turno.getIdTurno()); // Pasar el ID
+				controllerPaciente.confirmarAsistencia(turno.getIdTurno());
 				JOptionPane.showMessageDialog(this, "Turno confirmado correctamente", "Éxito",
 						JOptionPane.INFORMATION_MESSAGE);
 				cargarTurnos(); // Refresca la tabla
@@ -143,7 +139,7 @@ public class GestionTurnosPacienteFrame extends JFrame {
 			}
 			try {
 				Turno turno = controllerPaciente.turnosActivos().get(fila);
-				controllerPaciente.cancelarTurno(turno.getIdTurno()); // Pasar el ID
+				controllerPaciente.cancelarTurno(turno.getIdTurno());
 				JOptionPane.showMessageDialog(this, "Turno cancelado correctamente", "Éxito",
 						JOptionPane.INFORMATION_MESSAGE);
 				cargarTurnos(); // Refresca la tabla
@@ -158,14 +154,12 @@ public class GestionTurnosPacienteFrame extends JFrame {
 			dispose();
 		});
 
-		// === ARMADO FINAL ===
 		panelPrincipal.add(panelEncabezado, BorderLayout.NORTH);
 		panelPrincipal.add(scrollTabla, BorderLayout.CENTER);
 		panelPrincipal.add(panelBotones, BorderLayout.SOUTH);
 
 		setContentPane(panelPrincipal);
 
-		// Cargar los turnos al iniciar
 		cargarTurnos();
 	}
 
@@ -174,8 +168,7 @@ public class GestionTurnosPacienteFrame extends JFrame {
 		try {
 			List<Turno> turnos = controllerPaciente.turnosActivos();
 
-			// === Formatos de fecha y hora en español (usar forLanguageTag para evitar el
-			// constructor deprecated) ===
+			// Formato de fecha y hora en español
 			SimpleDateFormat formatoFecha = new SimpleDateFormat("EEEE dd 'de' MMMM yyyy",
 					Locale.forLanguageTag("es-AR"));
 			SimpleDateFormat formatoHora = new SimpleDateFormat("HH:mm");
@@ -189,8 +182,6 @@ public class GestionTurnosPacienteFrame extends JFrame {
 
 				// formatear fecha y hora
 				String fecha = formatoFecha.format(t.getFechaHora());
-				// capitalizar la primera letra (opcional, para que muestre "Miércoles" en lugar
-				// de "miércoles")
 				if (fecha != null && !fecha.isEmpty()) {
 					fecha = fecha.substring(0, 1).toUpperCase() + fecha.substring(1);
 				}

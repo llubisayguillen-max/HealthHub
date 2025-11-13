@@ -25,10 +25,10 @@ public class NuevoTurnoPacienteFrame extends JFrame {
 	private JButton btnReservar;
 
 	private List<Medico> medicosFiltrados = new ArrayList<>();
-	// Guardamos fechas reales internamente
+	// Guarda fechas reales
 	private Map<String, List<Date>> fechasDisponiblesPorMedico = new HashMap<>();
 
-	// Formato de fecha para mostrar y formato de hora
+	// Formato de fecha y hora para mostrar
 	private final SimpleDateFormat formatoDisplay = new SimpleDateFormat("EEEE dd 'de' MMMM yyyy",
 			new Locale("es", "AR"));
 	private final SimpleDateFormat formatoHora = new SimpleDateFormat("HH:mm");
@@ -51,7 +51,6 @@ public class NuevoTurnoPacienteFrame extends JFrame {
 		gbc.insets = new Insets(10, 20, 10, 20);
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 
-		// === Especialidad ===
 		JLabel lblEspecialidad = new JLabel("Especialidad:");
 		gbc.gridx = 0;
 		gbc.gridy = 0;
@@ -62,7 +61,6 @@ public class NuevoTurnoPacienteFrame extends JFrame {
 		gbc.gridy = 0;
 		panelPrincipal.add(comboEspecialidad, gbc);
 
-		// === Médico ===
 		JLabel lblMedico = new JLabel("Médico:");
 		gbc.gridx = 0;
 		gbc.gridy = 1;
@@ -73,7 +71,6 @@ public class NuevoTurnoPacienteFrame extends JFrame {
 		gbc.gridy = 1;
 		panelPrincipal.add(comboMedico, gbc);
 
-		// === Fecha ===
 		JLabel lblFecha = new JLabel("Fecha:");
 		gbc.gridx = 0;
 		gbc.gridy = 2;
@@ -84,7 +81,6 @@ public class NuevoTurnoPacienteFrame extends JFrame {
 		gbc.gridy = 2;
 		panelPrincipal.add(comboFecha, gbc);
 
-		// === Hora ===
 		JLabel lblHora = new JLabel("Hora:");
 		gbc.gridx = 0;
 		gbc.gridy = 3;
@@ -95,7 +91,6 @@ public class NuevoTurnoPacienteFrame extends JFrame {
 		gbc.gridy = 3;
 		panelPrincipal.add(comboHora, gbc);
 
-		// === Botón Reservar ===
 		btnReservar = new JButton("Reservar Turno");
 		btnReservar.setBackground(new Color(0, 102, 204));
 		btnReservar.setForeground(Color.WHITE);
@@ -107,13 +102,12 @@ public class NuevoTurnoPacienteFrame extends JFrame {
 
 		add(panelPrincipal, BorderLayout.CENTER);
 
-		// === Listeners ===
+		// Listeners
 		comboEspecialidad.addActionListener(e -> cargarMedicos());
 		comboMedico.addActionListener(e -> cargarFechas());
 		comboFecha.addActionListener(e -> cargarHoras());
 		btnReservar.addActionListener(e -> reservarTurno());
 
-		// Carga inicial
 		if (comboEspecialidad.getItemCount() > 0)
 			comboEspecialidad.setSelectedIndex(0);
 		cargarMedicos();
@@ -193,7 +187,7 @@ public class NuevoTurnoPacienteFrame extends JFrame {
 				if (!fecha.equals(fechaSeleccionada))
 					continue;
 
-				String horaInicio = partes[1].substring(0, 5); // "HH:mm"
+				String horaInicio = partes[1].substring(0, 5);
 				comboHora.addItem(horaInicio);
 			} catch (Exception ex) {
 				ex.printStackTrace();
