@@ -2,99 +2,92 @@ package gui;
 
 import javax.swing.*;
 import java.awt.*;
-import dll.ControllerUsuario;
 import bll.Usuario;
+import bll.Administrador;
+import dll.ControllerUsuario;
+import dll.ControllerAdministrador;
 
 public class LoginFrame extends JFrame {
 
-    private JTextField txtUsuario;
-    private JPasswordField txtPassword;
+    private RoundedTextField txtUsuario;
+    private RoundedPasswordField txtPassword;
     private ControllerUsuario usuarioController = new ControllerUsuario();
 
     public LoginFrame() {
-        setTitle("Sistema de Salud - Login");
-        setSize(720, 400);
+        setTitle("HealthHub - Login");
+        setSize(700, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
-        setLayout(new BorderLayout());
 
-        // panel izquierda
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        add(mainPanel);
+
+        // panel izqui
         JPanel leftPanel = new JPanel();
-        leftPanel.setBackground(new Color(91, 155, 213)); 
-        leftPanel.setPreferredSize(new Dimension(280, getHeight()));
-        leftPanel.setLayout(new GridBagLayout());
+        leftPanel.setBackground(new Color(0, 102, 204));
+        leftPanel.setPreferredSize(new Dimension(300, 400));
+        leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
 
-        // agg logo de health si hacemos (ya tiene el espacio arriba del nombre del sistema en el panel izqui)
-        JLabel lblLogo = new JLabel("");
-        lblLogo.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 80));
+        JLabel lblLogo = new JLabel(" ");
+        lblLogo.setAlignmentX(Component.CENTER_ALIGNMENT);
+        lblLogo.setBorder(BorderFactory.createEmptyBorder(40, 0, 20, 0));
+        leftPanel.add(lblLogo);
 
-        JLabel lblNombreSistema = new JLabel("<html><center>Sistema de Gestión<br/>Health Hub</center></html>");
-        lblNombreSistema.setForeground(Color.WHITE);
-        lblNombreSistema.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        JLabel lblAppName = new JLabel("HealthHub");
+        lblAppName.setForeground(Color.WHITE);
+        lblAppName.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        lblAppName.setAlignmentX(Component.CENTER_ALIGNMENT);
+        leftPanel.add(lblAppName);
 
-        JPanel leftContent = new JPanel(new GridLayout(2, 1, 0, 20));
-        leftContent.setOpaque(false);
-        leftContent.add(lblLogo);
-        leftContent.add(lblNombreSistema);
-
-        leftPanel.add(leftContent);
+        mainPanel.add(leftPanel, BorderLayout.WEST);
 
         // panel derecho
-        JPanel rightPanel = new JPanel();
+        JPanel rightPanel = new JPanel(new GridBagLayout());
         rightPanel.setBackground(Color.WHITE);
-        rightPanel.setLayout(new GridBagLayout());
+        mainPanel.add(rightPanel, BorderLayout.CENTER);
 
-        // Form derecho
-        JPanel formPanel = new JPanel(null);
-        formPanel.setPreferredSize(new Dimension(300, 330));
-        formPanel.setBackground(Color.WHITE);
-
-        // agg img o logo si hacemos
-        JLabel iconUser = new JLabel(UIManager.getIcon(""));
-        iconUser.setBounds(120, 10, 60, 60);
-        formPanel.add(iconUser);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(12, 10, 12, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
         JLabel lblTitulo = new JLabel("Inicio de Sesión", SwingConstants.CENTER);
-        lblTitulo.setBounds(70, 75, 160, 30);
-        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        formPanel.add(lblTitulo);
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 22));
 
-        JLabel lblUsuario = new JLabel("Usuario:");
-        lblUsuario.setBounds(20, 120, 200, 20);
-        formPanel.add(lblUsuario);
+        gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        rightPanel.add(lblTitulo, gbc);
 
-        txtUsuario = new JTextField();
-        txtUsuario.setBounds(20, 145, 260, 35);
-        txtUsuario.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        txtUsuario.setBorder(BorderFactory.createLineBorder(new Color(180,180,180), 1, true));
-        formPanel.add(txtUsuario);
+        // Campo usuario
+        gbc.gridy++;
+        txtUsuario = new RoundedTextField(15);
+        txtUsuario.setPreferredSize(new Dimension(240, 40));
+        txtUsuario.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        txtUsuario.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
+        txtUsuario.setToolTipText("Usuario");
+        rightPanel.add(txtUsuario, gbc);
 
-        JLabel lblPassword = new JLabel("Contraseña:");
-        lblPassword.setBounds(20, 190, 200, 20);
-        formPanel.add(lblPassword);
+        // Campo contraseña
+        gbc.gridy++;
+        txtPassword = new RoundedPasswordField(15);
+        txtPassword.setPreferredSize(new Dimension(240, 40));
+        txtPassword.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        txtPassword.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
+        txtPassword.setToolTipText("Contraseña");
+        rightPanel.add(txtPassword, gbc);
 
-        txtPassword = new JPasswordField();
-        txtPassword.setBounds(20, 215, 260, 35);
-        txtPassword.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        txtPassword.setBorder(BorderFactory.createLineBorder(new Color(180,180,180), 1, true));
-        formPanel.add(txtPassword);
-
-        JButton btnLogin = new JButton("Ingresar");
-        btnLogin.setBounds(20, 265, 260, 40);
-        btnLogin.setBackground(new Color(0, 120, 215));
+        // Boton Ingresar
+        gbc.gridy++;
+        RoundedButton btnLogin = new RoundedButton("Ingresar");
+        btnLogin.setPreferredSize(new Dimension(160, 45));
+        btnLogin.setBackground(new Color(0, 102, 204));
         btnLogin.setForeground(Color.WHITE);
-        btnLogin.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        btnLogin.setFocusPainted(false);
-        btnLogin.setBorder(BorderFactory.createEmptyBorder());
-        formPanel.add(btnLogin);
+        btnLogin.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        btnLogin.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        rightPanel.add(btnLogin, gbc);
 
         btnLogin.addActionListener(e -> iniciarSesion());
-
-        rightPanel.add(formPanel);
-
-        add(leftPanel, BorderLayout.WEST);
-        add(rightPanel, BorderLayout.CENTER);
     }
 
     private void iniciarSesion() {
@@ -122,17 +115,102 @@ public class LoginFrame extends JFrame {
             JOptionPane.showMessageDialog(this, "Bienvenido/a " + u.getNombre());
 
             switch (u.getClass().getSimpleName()) {
-                case "Administrador" -> new MenuAdministradorFrame().setVisible(true);
-                case "Medico"       -> new MenuMedicoFrame().setVisible(true);
-                case "Paciente"     -> new MenuPacienteFrame().setVisible(true);
-                default -> JOptionPane.showMessageDialog(this, "Rol desconocido");
+
+                case "Administrador" -> {
+                    ControllerAdministrador controller = new ControllerAdministrador(u);
+                    new MenuAdministradorFrame(controller, (Administrador) u).setVisible(true);
+                }
+
+                case "Medico" ->
+                        JOptionPane.showMessageDialog(this, "Menú de Médico próximamente");
+
+                case "Paciente" ->
+                        JOptionPane.showMessageDialog(this, "Menú de Paciente próximamente");
+
+                default ->
+                        JOptionPane.showMessageDialog(this, "Rol desconocido");
             }
 
             dispose();
 
+        } catch (IllegalStateException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Usuario bloqueado", JOptionPane.ERROR_MESSAGE);
+
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Error en el login: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    // campos redondos
+
+    class RoundedTextField extends JTextField {
+        private int radius;
+
+        public RoundedTextField(int radius) {
+            this.radius = radius;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            g2.setColor(Color.WHITE);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
+
+            g2.setColor(new Color(180, 180, 180));
+            g2.drawRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
+
+            super.paintComponent(g);
+        }
+    }
+
+    class RoundedPasswordField extends JPasswordField {
+        private int radius;
+
+        public RoundedPasswordField(int radius) {
+            this.radius = radius;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            g2.setColor(Color.WHITE);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
+
+            g2.setColor(new Color(180, 180, 180));
+            g2.drawRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
+
+            super.paintComponent(g);
+        }
+    }
+
+    class RoundedButton extends JButton {
+        private int radius = 15;
+
+        public RoundedButton(String text) {
+            super(text);
+            setOpaque(false);
+            setFocusPainted(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            g2.setColor(getBackground());
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
+
+            super.paintComponent(g);
+        }
+
+        @Override
+        public void paintBorder(Graphics g) {
         }
     }
 
