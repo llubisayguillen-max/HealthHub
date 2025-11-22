@@ -181,11 +181,14 @@ public class ControllerPaciente {
 	// Turnos activos
 	public List<Turno> turnosActivos() {
 		String sql = """
-				SELECT t.id, t.fecha, t.hora, t.estado
+				SELECT t.id, t.fecha, t.hora, t.estado,
+				       m.id AS id_medico, u.nombre AS nombre_medico, u.apellido AS apellido_medico, m.especialidad AS especialidad_medico
 				FROM turnos t
 				JOIN pacientes p ON p.id = t.id_paciente
-				JOIN usuarios u ON u.id_usuario = p.id_usuario
-				WHERE u.usuario_login = ? AND t.estado IN ('Reservado','Confirmado')
+				JOIN usuarios u_p ON u_p.id_usuario = p.id_usuario
+				LEFT JOIN medicos m ON m.id = t.id_medico
+				LEFT JOIN usuarios u ON u.id_usuario = m.id_usuario
+				WHERE u_p.usuario_login = ? AND t.estado IN ('Reservado','Confirmado')
 				ORDER BY t.fecha, t.hora
 				""";
 
@@ -195,7 +198,17 @@ public class ControllerPaciente {
 			try (ResultSet rs = ps.executeQuery()) {
 				while (rs.next()) {
 					Date fechaHora = convertirResultSetADate(rs, "fecha", "hora");
-					Turno t = new Turno(fechaHora, paciente, null);
+
+					// Crear objeto Medico solo si existe
+					Medico medico = null;
+					String nombreMedico = rs.getString("nombre_medico");
+					if (nombreMedico != null) {
+						String apellidoMedico = rs.getString("apellido_medico");
+						String especialidad = rs.getString("especialidad_medico");
+						medico = new Medico(nombreMedico, apellidoMedico, "", "", 0, especialidad);
+					}
+
+					Turno t = new Turno(fechaHora, paciente, medico);
 					t.setIdTurno(rs.getLong("id"));
 
 					String estadoDB = rs.getString("estado");

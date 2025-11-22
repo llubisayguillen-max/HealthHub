@@ -4,12 +4,14 @@ import javax.swing.*;
 import java.awt.*;
 import dll.ControllerUsuario;
 import bll.Usuario;
+import bll.Paciente;
 
 public class LoginFrame extends JFrame {
 
     private JTextField txtUsuario;
     private JPasswordField txtPassword;
     private ControllerUsuario usuarioController = new ControllerUsuario();
+    private static final long serialVersionUID = 1L;
 
     public LoginFrame() {
         setTitle("Sistema de Salud - Login");
