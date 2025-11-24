@@ -63,7 +63,8 @@ public class MenuAdministradorFrame extends JFrame {
         center.add(crearPanelSeccion("MÉDICOS", new String[]{
                 "Alta de Médico",
                 "Modificar Médico",
-        }, "MED"));
+        	}, "MED"));
+
 
         add(center, BorderLayout.CENTER);
 
@@ -89,12 +90,12 @@ public class MenuAdministradorFrame extends JFrame {
             JButton btn = crearBotonSeccion(op);
             btn.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-            //alta pac
+            // Alta paciente
             if (tipo.equals("PAC") && op.contains("Alta")) {
                 btn.addActionListener(e -> new AltaPacienteFrame(controller, admin).setVisible(true));
             }
 
-            //modificar pac
+            // Modificar paciente
             if (tipo.equals("PAC") && op.contains("Modificar")) {
                 btn.addActionListener(e -> {
                     String usuario = JOptionPane.showInputDialog(
@@ -111,11 +112,27 @@ public class MenuAdministradorFrame extends JFrame {
                 });
             }
 
-            //alta med
+            // Alta médico
             if (tipo.equals("MED") && op.contains("Alta")) {
                 btn.addActionListener(e -> new AltaMedicoFrame(controller, admin).setVisible(true));
             }
 
+            // Modificar médico 
+            if (tipo.equals("MED") && op.contains("Modificar")) {
+            	btn.addActionListener(e -> {
+            	    String usuario = JOptionPane.showInputDialog(
+            	            this,
+            	            "Ingrese el usuario del médico a modificar:",
+            	            "Modificar Médico",
+            	            JOptionPane.QUESTION_MESSAGE
+            	    );
+
+            	    if (usuario == null || usuario.trim().isEmpty()) return;
+
+            	    new ModificarMedicoFrame(controller, usuario.trim()).setVisible(true);
+            	});
+
+            }
 
             panel.add(btn);
             panel.add(Box.createVerticalStrut(10));
@@ -152,7 +169,13 @@ public class MenuAdministradorFrame extends JFrame {
         grid.setBackground(Color.WHITE);
         grid.setBorder(BorderFactory.createEmptyBorder(15, 150, 15, 150));
 
-        grid.add(crearBotonGeneral("Listar Usuarios"));
+        JButton btnListar = crearBotonGeneral("Listar Usuarios");
+        btnListar.addActionListener(e -> 
+            new ListarUsuariosFrame(controller, admin).setVisible(true)
+        );
+        grid.add(btnListar);
+
+        
         grid.add(crearBotonGeneral("Resetear contraseña"));
         grid.add(crearBotonGeneral("Cerrar Sesión"));
         grid.add(crearBotonGeneral("Bloquear Usuario"));
@@ -196,38 +219,4 @@ public class MenuAdministradorFrame extends JFrame {
     	btn.setCursor(new Cursor(Cursor.HAND_CURSOR)); 
     	return btn; }
 
-
-}
-
-class RoundedButton extends JButton {
-
- private int radius = 12; // radio del borde
-
- public RoundedButton(String text) {
-     super(text);
-     setOpaque(false);
- }
-
- @Override
- protected void paintComponent(Graphics g) {
-
-     Graphics2D g2 = (Graphics2D) g.create();
-     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-     // fondo
-     g2.setColor(getBackground());
-     g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
-
-     super.paintComponent(g);
-     g2.dispose();
- }
-
- @Override
- public void paintBorder(Graphics g) {
-     Graphics2D g2 = (Graphics2D) g.create();
-     g2.setColor(getForeground());
-     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-     g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radius, radius);
-     g2.dispose();
- }
 }

@@ -2,62 +2,56 @@ package gui;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.geom.RoundRectangle2D;
 
+import bll.Medico;
 import dll.ControllerAdministrador;
-import bll.Administrador;
-import bll.Paciente;
 
-public class ModificarPacienteFrame extends JFrame {
+public class ModificarMedicoFrame extends JFrame {
 
     private ControllerAdministrador controller;
-    private Administrador admin;
     private String usuarioBuscado;
 
-    private JTextField txtNombre, txtApellido, txtUsuario, txtContrato, txtOS;
-    private JTextField txtPass;
-
+    private JTextField txtUsuario, txtNombre, txtApellido, txtPass, txtMatricula, txtEspecialidad;
     private RoundedButton btnGuardar;
 
-    public ModificarPacienteFrame(ControllerAdministrador controller, Administrador admin, String usuario) {
+    public ModificarMedicoFrame(ControllerAdministrador controller, String usuarioBuscado) {
         this.controller = controller;
-        this.admin = admin;
-        this.usuarioBuscado = usuario;
+        this.usuarioBuscado = usuarioBuscado;
 
-        setTitle("HealthHub - Modificar Paciente");
+        setTitle("HealthHub - Modificar Médico");
         setSize(500, 520);
         setLocationRelativeTo(null);
         setResizable(false);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
         initUI();
-        cargarDatosDelPaciente();
+        cargarDatosDelMedico();
     }
 
     private void initUI() {
-
         setLayout(new BorderLayout());
 
-        //barra superior
+        // Barra superior
         JPanel topBar = new JPanel();
         topBar.setBackground(new Color(0, 102, 204));
         topBar.setPreferredSize(new Dimension(500, 60));
         topBar.setLayout(new BorderLayout());
 
-        JLabel lblTitulo = new JLabel("Modificar Paciente", SwingConstants.CENTER);
+        JLabel lblTitulo = new JLabel("Modificar Médico", SwingConstants.CENTER);
         lblTitulo.setForeground(Color.WHITE);
         lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 20));
-
         topBar.add(lblTitulo, BorderLayout.CENTER);
+
         add(topBar, BorderLayout.NORTH);
 
+        // Formulario
         JPanel form = new JPanel();
         form.setLayout(null);
         form.setBackground(Color.WHITE);
 
         int y = 30;
 
-        // Usuario (no editable)
+        // Usuario (NO editable)
         form.add(crearLabel("Usuario:", 30, y));
         txtUsuario = crearCampo(150, y);
         txtUsuario.setEditable(false);
@@ -82,26 +76,25 @@ public class ModificarPacienteFrame extends JFrame {
         form.add(txtPass);
         y += 50;
 
-        // Contrato
-        form.add(crearLabel("N° Contrato:", 30, y));
-        txtContrato = crearCampo(150, y);
-        form.add(txtContrato);
+        // Matrícula
+        form.add(crearLabel("Matrícula:", 30, y));
+        txtMatricula = crearCampo(150, y);
+        form.add(txtMatricula);
         y += 50;
 
-        // Obra social
-        form.add(crearLabel("Obra Social:", 30, y));
-        txtOS = crearCampo(150, y);
-        form.add(txtOS);
+        // Especialidad
+        form.add(crearLabel("Especialidad:", 30, y));
+        txtEspecialidad = crearCampo(150, y);
+        form.add(txtEspecialidad);
         y += 60;
 
-        // Botón guardar
+        // Botón Guardar
         btnGuardar = new RoundedButton("Guardar Cambios");
         btnGuardar.setBackground(new Color(0, 102, 204));
         btnGuardar.setForeground(Color.WHITE);
         btnGuardar.setFont(new Font("Segoe UI", Font.BOLD, 16));
         btnGuardar.setBounds(150, y, 200, 40);
         btnGuardar.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnGuardar.setFocusPainted(false);
         form.add(btnGuardar);
 
         btnGuardar.addActionListener(e -> guardarCambios());
@@ -109,8 +102,8 @@ public class ModificarPacienteFrame extends JFrame {
         add(form, BorderLayout.CENTER);
     }
 
-    private JLabel crearLabel(String text, int x, int y) {
-        JLabel lbl = new JLabel(text);
+    private JLabel crearLabel(String txt, int x, int y) {
+        JLabel lbl = new JLabel(txt);
         lbl.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         lbl.setBounds(x, y, 130, 30);
         return lbl;
@@ -124,51 +117,40 @@ public class ModificarPacienteFrame extends JFrame {
         return txt;
     }
 
+    private void cargarDatosDelMedico() {
+        Medico m = controller.obtenerMedico(usuarioBuscado);
 
-    private void cargarDatosDelPaciente() {
-
-        Paciente p = controller.obtenerPaciente(usuarioBuscado);
-
-        if (p == null) {
-            JOptionPane.showMessageDialog(this, "Paciente no encontrado.");
+        if (m == null) {
+            JOptionPane.showMessageDialog(this, "Médico no encontrado.");
             dispose();
             return;
         }
 
-        txtUsuario.setText(p.getUsuario());
-        txtNombre.setText(p.getNombre());
-        txtApellido.setText(p.getApellido());
-        txtPass.setText(p.getContrasenia());
-        txtContrato.setText(String.valueOf(p.getNroContrato()));
-        txtOS.setText(p.getObraSocial());
+        txtUsuario.setText(m.getUsuario());
+        txtNombre.setText(m.getNombre());
+        txtApellido.setText(m.getApellido());
+        txtPass.setText(m.getContrasenia());
+        txtMatricula.setText(m.getMatricula());
+        txtEspecialidad.setText(m.getEspecialidad());
     }
 
-
     private void guardarCambios() {
-
         String usr = txtUsuario.getText().trim();
         String nom = txtNombre.getText().trim();
         String ape = txtApellido.getText().trim();
         String pass = txtPass.getText().trim();
-        String nro = txtContrato.getText().trim();
-        String os = txtOS.getText().trim();
+        String mat = txtMatricula.getText().trim();
+        String esp = txtEspecialidad.getText().trim();
 
         if (nom.isEmpty()) { mensaje("Ingrese el nombre."); return; }
         if (ape.isEmpty()) { mensaje("Ingrese el apellido."); return; }
         if (pass.isEmpty()) { mensaje("Ingrese la contraseña."); return; }
-        if (!nro.matches("\\d+")) { mensaje("Contrato debe ser numérico."); return; }
-        if (os.isEmpty()) { mensaje("Ingrese la obra social."); return; }
+        if (mat.isEmpty()) { mensaje("Ingrese la matrícula."); return; }
+        if (esp.isEmpty()) { mensaje("Ingrese la especialidad."); return; }
 
-        controller.modificarPaciente(
-                usr,
-                nom,
-                ape,
-                pass,
-                Integer.parseInt(nro),
-                os
-        );
+        controller.modificarMedico(usr, nom, ape, pass, mat, esp);
 
-        JOptionPane.showMessageDialog(this, "Paciente modificado correctamente.");
+        JOptionPane.showMessageDialog(this, "Médico modificado correctamente.");
         dispose();
     }
 
@@ -182,7 +164,6 @@ public class ModificarPacienteFrame extends JFrame {
         private int radius;
 
         public RoundedTextField(int radius) {
-            super();
             this.radius = radius;
             setOpaque(false);
         }

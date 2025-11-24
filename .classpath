@@ -6,6 +6,15 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/PC/Desktop/Davinci/3er Cuatrimestre/Programación avanzada/mysql-connector-java-5.1.13.jar"/>
+	<classpathentry kind="lib" path="C:/Users/llubi/Downloads/jcalendar-1.4.jar">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/llubi/Downloads/mysql-connector-java-5.1.13 (1).jar">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

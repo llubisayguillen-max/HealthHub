@@ -1,6 +1,8 @@
 package dll;
 
 import bll.Usuario;
+import bll.Medico;
+import bll.Paciente;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -150,6 +152,7 @@ public class ControllerAdministrador {
         }
     }
 
+
     //dar baja paciente -------------------------
 
     public void eliminarPaciente(String usuario) {
@@ -158,6 +161,55 @@ public class ControllerAdministrador {
 
         eliminarUsuario(usuario);
     }
+    
+    public Paciente obtenerPaciente(String usuarioLogin) {
+
+        String sql = """
+            SELECT u.nombre, u.apellido, u.usuario_login, u.contrasenia,
+                   p.nro_contrato, p.obra_social
+            FROM usuarios u
+            JOIN pacientes p ON u.id_usuario = p.id_usuario
+            WHERE u.usuario_login = ?
+        """;
+
+        try (Connection c = Conexion.getInstance().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+
+            ps.setString(1, usuarioLogin);
+
+            try (ResultSet rs = ps.executeQuery()) {
+
+                if (!rs.next()) {
+                    return null; 
+                }
+
+                String nombre = rs.getString("nombre");
+                String apellido = rs.getString("apellido");
+                String usuario = rs.getString("usuario_login");
+                String contrasenia = rs.getString("contrasenia");
+                int nroContrato = rs.getInt("nro_contrato");
+                String obraSocial = rs.getString("obra_social");
+
+                
+                Paciente p = new Paciente(
+                        nombre,
+                        apellido,
+                        usuario,
+                        contrasenia,
+                        nroContrato,
+                        obraSocial,
+                        null
+                );
+
+                return p;
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Error al obtener datos del paciente.", e);
+        }
+    }
+
+    
 
     //registrar medico -------------------------
 
@@ -214,50 +266,178 @@ public class ControllerAdministrador {
 
     //modificar medico -------------------------
 
-    public void modificarMedico(String usuario, String nombre, String apellido, String contrasenia,
-                                String matricula, String especialidad) {
+		    public void modificarMedico(String usuario, String nombre, String apellido, String contrasenia,
+		            String matricula, String especialidad) {
+		
+		// Validaciones básicas
+		if (!existeUsuario(usuario))
+			throw new IllegalArgumentException("El médico '" + usuario + "' no existe.");
+			
+			validarNoVacio("Nombre", nombre);
+			validarNoVacio("Apellido", apellido);
+			validarNoVacio("Contraseña", contrasenia);
+			validarNoVacio("Matrícula", matricula);
+			validarNoVacio("Especialidad", especialidad);
+		
+		if (!matricula.matches("\\d+"))
+			throw new IllegalArgumentException("La matrícula debe contener solo números.");
+		
+		
+			String sqlGetId = "SELECT id_usuario FROM usuarios WHERE usuario_login=?";
+			long idUsuarioMedico;
+		
+		try (Connection c = Conexion.getInstance().getConnection();
+		PreparedStatement ps = c.prepareStatement(sqlGetId)) {
+		
+		ps.setString(1, usuario);
+		
+		try (ResultSet rs = ps.executeQuery()) {
+		if (!rs.next())
+		throw new IllegalArgumentException("No se encontró el médico '" + usuario + "'.");
+		idUsuarioMedico = rs.getLong(1);
+		}
+		} catch (SQLException e) {
+		throw new RuntimeException("Error verificando médico", e);
+		}
+		
+		//Verificar si la matrícula pertenece a OTRO médico
+		String sqlCheckMat = "SELECT id_usuario FROM medicos WHERE matricula=?";
+		
+		try (Connection c = Conexion.getInstance().getConnection();
+		PreparedStatement ps = c.prepareStatement(sqlCheckMat)) {
+		
+		ps.setString(1, matricula);
+		
+		try (ResultSet rs = ps.executeQuery()) {
+		if (rs.next()) {
+		long idMat = rs.getLong(1);
+		
+		if (idMat != idUsuarioMedico) {
+		    // La matrícula pertenece a otro médico
+		    throw new IllegalArgumentException("La matrícula '" + matricula + "' ya está registrada.");
+		}
+		}
+		}
+		} catch (SQLException e) {
+		throw new RuntimeException("Error verificando matrícula", e);
+		}
+		
+		// Actualizar tabla usuarios + medicos
+		String sqlUsuario = "UPDATE usuarios SET nombre=?, apellido=?, contrasenia=? WHERE usuario_login=?";
+		String sqlMedico = "UPDATE medicos SET matricula=?, especialidad=? WHERE id_usuario=?";
+		
+		try (Connection c = Conexion.getInstance().getConnection();
+		PreparedStatement psUser = c.prepareStatement(sqlUsuario);
+		PreparedStatement psMed = c.prepareStatement(sqlMedico)) {
+		
+		String passEncriptada = Encriptador.encriptar(contrasenia);
+		
+		psUser.setString(1, nombre);
+		psUser.setString(2, apellido);
+		psUser.setString(3, passEncriptada);
+		psUser.setString(4, usuario);
+		psUser.executeUpdate();
+		
+		psMed.setString(1, matricula);
+		psMed.setString(2, especialidad);
+		psMed.setLong(3, idUsuarioMedico);
+		psMed.executeUpdate();
+		
+		} catch (SQLException e) {
+		throw new RuntimeException("Error modificando médico", e);
+		}
+}
 
-        if (!existeUsuario(usuario))
-            throw new IllegalArgumentException("El médico '" + usuario + "' no existe.");
+    
+    public bll.Medico obtenerMedico(String usuarioLogin) {
 
-        // Validaciones de campos
-        validarNoVacio("Nombre", nombre);
-        validarNoVacio("Apellido", apellido);
-        validarNoVacio("Contraseña", contrasenia);
-        validarNoVacio("Matrícula", matricula);
-        validarNoVacio("Especialidad", especialidad);
-
-        if (!matricula.matches("\\d+"))
-            throw new IllegalArgumentException("La matrícula debe contener solo números.");
-
-        if (existeMatricula(matricula))
-            throw new IllegalArgumentException("La matrícula '" + matricula + "' ya está registrada.");
-
-        String sqlUsuario = "UPDATE usuarios SET nombre=?, apellido=?, contrasenia=? WHERE usuario_login=?";
-        String sqlMedico = "UPDATE medicos SET matricula=?, especialidad=? " +
-                "WHERE id_usuario=(SELECT id_usuario FROM usuarios WHERE usuario_login=?)";
+        String sql = """
+            SELECT  u.nombre,
+                    u.apellido,
+                    u.usuario_login,
+                    u.contrasenia,
+                    m.matricula,
+                    m.especialidad
+            FROM usuarios u
+            JOIN medicos m ON u.id_usuario = m.id_usuario
+            WHERE u.usuario_login = ?
+        """;
 
         try (Connection c = Conexion.getInstance().getConnection();
-             PreparedStatement psUser = c.prepareStatement(sqlUsuario);
-             PreparedStatement psMed = c.prepareStatement(sqlMedico)) {
+             PreparedStatement ps = c.prepareStatement(sql)) {
 
-            String passEncriptada = Encriptador.encriptar(contrasenia);
+            ps.setString(1, usuarioLogin);
 
-            psUser.setString(1, nombre);
-            psUser.setString(2, apellido);
-            psUser.setString(3, passEncriptada);
-            psUser.setString(4, usuario);
-            psUser.executeUpdate();
+            try (ResultSet rs = ps.executeQuery()) {
 
-            psMed.setString(1, matricula);
-            psMed.setString(2, especialidad);
-            psMed.setString(3, usuario);
-            psMed.executeUpdate();
+                if (!rs.next()) {
+                    return null; 
+                }
+
+                String nombre = rs.getString("nombre");
+                String apellido = rs.getString("apellido");
+                String usuario = rs.getString("usuario_login");
+                String contrasenia = rs.getString("contrasenia");
+                String matricula = rs.getString("matricula");
+                String especialidad = rs.getString("especialidad");
+
+                // Crear el médico SIN historial ni turnos
+                bll.Medico m = new bll.Medico(
+                        nombre,
+                        apellido,
+                        usuario,
+                        contrasenia,
+                        matricula,
+                        especialidad
+                );
+
+                return m;
+            }
 
         } catch (SQLException e) {
-            throw new RuntimeException("Error modificando médico", e);
+            throw new RuntimeException("Error al obtener datos del médico.", e);
         }
     }
+
+    public Medico obtenerMedicoPorMatricula(String matricula) {
+
+        if (matricula == null || matricula.trim().isEmpty())
+            throw new IllegalArgumentException("Debe ingresar una matrícula.");
+
+        String sql = """
+            SELECT u.usuario_login, u.nombre, u.apellido, u.contrasenia,
+                   m.matricula, m.especialidad
+            FROM medicos m
+            JOIN usuarios u ON m.id_usuario = u.id_usuario
+            WHERE m.matricula = ?
+            """;
+
+        try (Connection c = Conexion.getInstance().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+
+            ps.setString(1, matricula);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+
+                    return new Medico(
+                            rs.getString("usuario_login"),
+                            rs.getString("nombre"),
+                            rs.getString("apellido"),
+                            rs.getString("contrasenia"),
+                            rs.getString("matricula"),
+                            rs.getString("especialidad")
+                    );
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Error buscando médico por matrícula", e);
+        }
+
+        return null;
+    }
+
 
     //dar baja medico -------------------------
 
