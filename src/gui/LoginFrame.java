@@ -1,144 +1,251 @@
 package gui;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import java.awt.*;
+
 import dll.ControllerUsuario;
+import dll.ControllerAdministrador;
 import bll.Usuario;
-import bll.Paciente;
+import bll.Administrador;
+import bll.Medico;
+
+import static gui.UiPaleta.*;
+import static gui.UiFonts.*;
 
 public class LoginFrame extends JFrame {
 
-    private JTextField txtUsuario;
-    private JPasswordField txtPassword;
-    private ControllerUsuario usuarioController = new ControllerUsuario();
-    private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
 
-    public LoginFrame() {
-        setTitle("Sistema de Salud - Login");
-        setSize(720, 400);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setResizable(false);
-        setLayout(new BorderLayout());
+	private JTextField txtUsuario;
+	private JPasswordField txtPassword;
+	private final ControllerUsuario usuarioController = new ControllerUsuario();
 
-        // panel izquierda
-        JPanel leftPanel = new JPanel();
-        leftPanel.setBackground(new Color(91, 155, 213)); 
-        leftPanel.setPreferredSize(new Dimension(280, getHeight()));
-        leftPanel.setLayout(new GridBagLayout());
+	public LoginFrame() {
+		setTitle("Sistema de Salud - Login");
+		setSize(900, 450);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setLocationRelativeTo(null);
+		setResizable(false);
+		setLayout(new BorderLayout());
 
-        // agg logo de health si hacemos (ya tiene el espacio arriba del nombre del sistema en el panel izqui)
-        JLabel lblLogo = new JLabel("");
-        lblLogo.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 80));
+		initUI();
+	}
 
-        JLabel lblNombreSistema = new JLabel("<html><center>Sistema de Gestión<br/>Health Hub</center></html>");
-        lblNombreSistema.setForeground(Color.WHITE);
-        lblNombreSistema.setFont(new Font("Segoe UI", Font.BOLD, 20));
+	private void initUI() {
+		// Panel izquierdo
+		JPanel leftPanel = new JPanel();
+		leftPanel.setBackground(COLOR_PRIMARY);
+		leftPanel.setPreferredSize(new Dimension(300, getHeight()));
 
-        JPanel leftContent = new JPanel(new GridLayout(2, 1, 0, 20));
-        leftContent.setOpaque(false);
-        leftContent.add(lblLogo);
-        leftContent.add(lblNombreSistema);
+		// Layout vertical
+		leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
 
-        leftPanel.add(leftContent);
+		// Logo
+		ImageIcon rawLogo = new ImageIcon(getClass().getResource("/gui/img/logo.png"));
+		Image scaledLogo = rawLogo.getImage().getScaledInstance(400, 400, Image.SCALE_SMOOTH);
+		JLabel lblLogo = new JLabel(new ImageIcon(scaledLogo));
+		lblLogo.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // panel derecho
-        JPanel rightPanel = new JPanel();
-        rightPanel.setBackground(Color.WHITE);
-        rightPanel.setLayout(new GridBagLayout());
+		leftPanel.add(Box.createVerticalGlue());
+		leftPanel.add(lblLogo);
+		leftPanel.add(Box.createVerticalStrut(10));
+		leftPanel.add(Box.createVerticalGlue());
 
-        // Form derecho
-        JPanel formPanel = new JPanel(null);
-        formPanel.setPreferredSize(new Dimension(300, 330));
-        formPanel.setBackground(Color.WHITE);
+		// Panel derecho (login)
+		JPanel rightPanel = new JPanel(new GridBagLayout());
+		rightPanel.setBackground(COLOR_BACKGROUND);
 
-        // agg img o logo si hacemos
-        JLabel iconUser = new JLabel(UIManager.getIcon(""));
-        iconUser.setBounds(120, 10, 60, 60);
-        formPanel.add(iconUser);
+		LoginCardPanel card = new LoginCardPanel(18);
+		card.setLayout(new GridBagLayout());
 
-        JLabel lblTitulo = new JLabel("Inicio de Sesión", SwingConstants.CENTER);
-        lblTitulo.setBounds(70, 75, 160, 30);
-        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        formPanel.add(lblTitulo);
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.insets = new Insets(6, 10, 6, 10);
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.gridx = 0;
+		gbc.weightx = 1.0;
 
-        JLabel lblUsuario = new JLabel("Usuario:");
-        lblUsuario.setBounds(20, 120, 200, 20);
-        formPanel.add(lblUsuario);
+		int row = 0;
 
-        txtUsuario = new JTextField();
-        txtUsuario.setBounds(20, 145, 260, 35);
-        txtUsuario.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        txtUsuario.setBorder(BorderFactory.createLineBorder(new Color(180,180,180), 1, true));
-        formPanel.add(txtUsuario);
+		// Título
+		JLabel lblTitulo = new JLabel("Inicio de Sesión", SwingConstants.CENTER);
+		lblTitulo.setFont(H2_SECTION);
+		lblTitulo.setForeground(new Color(60, 60, 60));
+		gbc.gridy = row++;
+		gbc.gridwidth = 2;
+		gbc.anchor = GridBagConstraints.CENTER;
+		card.add(lblTitulo, gbc);
 
-        JLabel lblPassword = new JLabel("Contraseña:");
-        lblPassword.setBounds(20, 190, 200, 20);
-        formPanel.add(lblPassword);
+		// Subtítulo
+		JLabel lblSubtitulo = new JLabel("Ingresá con tu usuario y contraseña", SwingConstants.CENTER);
+		lblSubtitulo.setFont(BODY);
+		lblSubtitulo.setForeground(new Color(130, 130, 130));
+		gbc.gridy = row++;
+		card.add(lblSubtitulo, gbc);
 
-        txtPassword = new JPasswordField();
-        txtPassword.setBounds(20, 215, 260, 35);
-        txtPassword.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        txtPassword.setBorder(BorderFactory.createLineBorder(new Color(180,180,180), 1, true));
-        formPanel.add(txtPassword);
+		// Usuario
+		JLabel lblUsuario = new JLabel("Usuario:");
+		lblUsuario.setFont(BODY);
+		lblUsuario.setForeground(new Color(80, 80, 80));
+		gbc.gridy = row++;
+		gbc.gridwidth = 2;
+		gbc.anchor = GridBagConstraints.WEST;
+		card.add(lblUsuario, gbc);
 
-        JButton btnLogin = new JButton("Ingresar");
-        btnLogin.setBounds(20, 265, 260, 40);
-        btnLogin.setBackground(new Color(0, 120, 215));
-        btnLogin.setForeground(Color.WHITE);
-        btnLogin.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        btnLogin.setFocusPainted(false);
-        btnLogin.setBorder(BorderFactory.createEmptyBorder());
-        formPanel.add(btnLogin);
+		txtUsuario = new JTextField();
+		txtUsuario.setFont(BODY);
+		txtUsuario.setPreferredSize(new Dimension(260, 32));
+		txtUsuario.setBorder(BorderFactory.createCompoundBorder(new LineBorder(new Color(200, 200, 200), 1, true),
+				new EmptyBorder(0, 10, 0, 10)));
 
-        btnLogin.addActionListener(e -> iniciarSesion());
+		JPanel userFieldPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+		userFieldPanel.setOpaque(false);
+		userFieldPanel.add(txtUsuario);
 
-        rightPanel.add(formPanel);
+		gbc.gridy = row++;
+		gbc.gridwidth = 2;
+		gbc.anchor = GridBagConstraints.CENTER;
+		card.add(userFieldPanel, gbc);
 
-        add(leftPanel, BorderLayout.WEST);
-        add(rightPanel, BorderLayout.CENTER);
-    }
+		// Contraseña
+		JLabel lblPassword = new JLabel("Contraseña:");
+		lblPassword.setFont(BODY);
+		lblPassword.setForeground(new Color(80, 80, 80));
+		gbc.gridy = row++;
+		gbc.gridwidth = 2;
+		gbc.anchor = GridBagConstraints.WEST;
+		card.add(lblPassword, gbc);
 
-    private void iniciarSesion() {
-        String usuario = txtUsuario.getText().trim();
-        String pass = new String(txtPassword.getPassword()).trim();
+		txtPassword = new JPasswordField();
+		txtPassword.setFont(BODY);
+		txtPassword.setPreferredSize(new Dimension(260, 32));
+		txtPassword.setBorder(BorderFactory.createCompoundBorder(new LineBorder(new Color(200, 200, 200), 1, true),
+				new EmptyBorder(0, 10, 0, 10)));
 
-        if (usuario.isEmpty() || pass.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Debe completar todos los campos");
-            return;
-        }
+		JPanel passFieldPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+		passFieldPanel.setOpaque(false);
+		passFieldPanel.add(txtPassword);
 
-        try {
-            if (!usuarioController.existeUsuario(usuario)) {
-                JOptionPane.showMessageDialog(this, "El usuario no existe");
-                return;
-            }
+		gbc.gridy = row++;
+		gbc.gridwidth = 2;
+		gbc.anchor = GridBagConstraints.CENTER;
+		card.add(passFieldPanel, gbc);
 
-            var opt = usuarioController.login(usuario, pass);
-            if (opt.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Contraseña incorrecta");
-                return;
-            }
+		// Botón ingresar
+		RoundedButton btnLogin = new RoundedButton("Ingresar");
+		btnLogin.setBackground(COLOR_ACCENT);
+		btnLogin.setForeground(Color.WHITE);
+		btnLogin.setFont(BUTTON);
+		btnLogin.setFocusPainted(false);
+		btnLogin.setBorder(BorderFactory.createEmptyBorder(8, 18, 8, 18));
+		btnLogin.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-            Usuario u = opt.get();
-            JOptionPane.showMessageDialog(this, "Bienvenido/a " + u.getNombre());
+		JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 10));
+		btnPanel.setOpaque(false);
+		btnPanel.add(btnLogin);
 
-            switch (u.getClass().getSimpleName()) {
-                case "Administrador" -> new MenuAdministradorFrame().setVisible(true);
-                case "Medico"       -> new MenuMedicoFrame().setVisible(true);
-                case "Paciente"     -> new MenuPacienteFrame().setVisible(true);
-                default -> JOptionPane.showMessageDialog(this, "Rol desconocido");
-            }
+		gbc.gridy = row++;
+		gbc.gridwidth = 2;
+		gbc.anchor = GridBagConstraints.CENTER;
+		gbc.fill = GridBagConstraints.NONE;
+		card.add(btnPanel, gbc);
 
-            dispose();
+		// Acción del botón + Enter
+		btnLogin.addActionListener(e -> iniciarSesion());
+		getRootPane().setDefaultButton(btnLogin);
 
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
+		GridBagConstraints gbcRight = new GridBagConstraints();
+		gbcRight.gridx = 0;
+		gbcRight.gridy = 0;
+		gbcRight.anchor = GridBagConstraints.CENTER;
+		rightPanel.add(card, gbcRight);
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new LoginFrame().setVisible(true));
-    }
+		add(leftPanel, BorderLayout.WEST);
+		add(rightPanel, BorderLayout.CENTER);
+	}
+
+	// Login
+	private void iniciarSesion() {
+		String usuario = txtUsuario.getText().trim();
+		String pass = new String(txtPassword.getPassword()).trim();
+
+		if (usuario.isEmpty() || pass.isEmpty()) {
+			JOptionPane.showMessageDialog(this, "Debe completar todos los campos");
+			return;
+		}
+
+		try {
+			if (!usuarioController.existeUsuario(usuario)) {
+				JOptionPane.showMessageDialog(this, "El usuario no existe");
+				return;
+			}
+
+			var opt = usuarioController.login(usuario, pass);
+			if (opt.isEmpty()) {
+				JOptionPane.showMessageDialog(this, "Contraseña incorrecta");
+				return;
+			}
+
+			Usuario u = opt.get();
+			JOptionPane.showMessageDialog(this, "Bienvenido/a " + u.getNombre());
+
+			switch (u.getClass().getSimpleName()) {
+			case "Administrador" -> {
+				Administrador admin = (Administrador) u;
+				ControllerAdministrador adminController = new ControllerAdministrador(admin);
+				new MenuAdministradorFrame(adminController, admin).setVisible(true);
+			}
+			case "Medico" -> {
+				Medico med = (Medico) u;
+				new MenuMedicoFrame(med).setVisible(true);
+			}
+			default -> JOptionPane.showMessageDialog(this, "Rol desconocido");
+			}
+
+			dispose();
+
+		} catch (Exception ex) {
+			JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	// Borde de la card de login
+	private static class LoginCardPanel extends JPanel {
+		private final int radius;
+
+		public LoginCardPanel(int radius) {
+			this.radius = radius;
+			setOpaque(false);
+		}
+
+		@Override
+		protected void paintComponent(Graphics g) {
+			int w = getWidth();
+			int h = getHeight();
+
+			Graphics2D g2 = (Graphics2D) g.create();
+			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+			// Fondo blanco
+			g2.setColor(Color.WHITE);
+			g2.fillRoundRect(0, 0, w - 1, h - 1, radius, radius);
+
+			// Borde gris clarito alrededor
+			g2.setColor(new Color(220, 220, 220));
+			g2.drawRoundRect(0, 0, w - 1, h - 1, radius, radius);
+
+			g2.dispose();
+			super.paintComponent(g);
+		}
+
+		@Override
+		public Insets getInsets() {
+			return new Insets(20, 28, 20, 28);
+		}
+	}
+
+	public static void main(String[] args) {
+		SwingUtilities.invokeLater(() -> new LoginFrame().setVisible(true));
+	}
 }
