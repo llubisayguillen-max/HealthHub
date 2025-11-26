@@ -31,7 +31,7 @@ public class MenuAdministradorFrame extends JFrame {
         getContentPane().setBackground(COLOR_BACKGROUND);
         setLayout(new BorderLayout());
 
-        // ░░ HEADER ░░
+        //HEADER
         JPanel topBar = new JPanel(new BorderLayout());
         topBar.setBackground(COLOR_PRIMARY);
         topBar.setPreferredSize(new Dimension(getWidth(), 85));
@@ -57,7 +57,7 @@ public class MenuAdministradorFrame extends JFrame {
         topBar.add(info, BorderLayout.WEST);
         add(topBar, BorderLayout.NORTH);
 
-        // ░░ CENTRO ░░
+        //CENTRO
         JPanel wrapperCenter = new JPanel(new BorderLayout());
         wrapperCenter.setOpaque(false);
         wrapperCenter.setBorder(BorderFactory.createEmptyBorder(10, 32, 10, 32));
@@ -157,7 +157,7 @@ public class MenuAdministradorFrame extends JFrame {
         add(footer, BorderLayout.SOUTH);
     }
 
-    // ░░ CARD CON LISTA DE BOTONES ░░
+    //CARD CON LISTA DE BOTONES
     private JPanel crearCardConBotones(
             String titulo,
             String imagePath,
