@@ -6,20 +6,23 @@ import java.awt.*;
 import bll.Medico;
 import dll.ControllerAdministrador;
 
+import static gui.UiPaleta.*;
+
 public class ModificarMedicoFrame extends JFrame {
 
     private ControllerAdministrador controller;
     private String usuarioBuscado;
 
     private JTextField txtUsuario, txtNombre, txtApellido, txtPass, txtMatricula, txtEspecialidad;
-    private RoundedButton btnGuardar;
+
+    private static final String UI_FONT_FAMILY = "Segoe UI";
 
     public ModificarMedicoFrame(ControllerAdministrador controller, String usuarioBuscado) {
         this.controller = controller;
         this.usuarioBuscado = usuarioBuscado;
 
         setTitle("HealthHub - Modificar Médico");
-        setSize(500, 520);
+        setSize(580, 560);
         setLocationRelativeTo(null);
         setResizable(false);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -29,91 +32,101 @@ public class ModificarMedicoFrame extends JFrame {
     }
 
     private void initUI() {
+
+        getContentPane().setBackground(COLOR_BACKGROUND);
         setLayout(new BorderLayout());
 
-        // Barra superior
-        JPanel topBar = new JPanel();
-        topBar.setBackground(new Color(0, 102, 204));
-        topBar.setPreferredSize(new Dimension(500, 60));
-        topBar.setLayout(new BorderLayout());
+        JPanel topBar = new JPanel(new BorderLayout());
+        topBar.setBackground(COLOR_PRIMARY);
+        topBar.setPreferredSize(new Dimension(getWidth(), 80));
+        topBar.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
-        JLabel lblTitulo = new JLabel("Modificar Médico", SwingConstants.CENTER);
+        JLabel lblTitulo = new JLabel("Modificar Médico");
+        lblTitulo.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 24));
         lblTitulo.setForeground(Color.WHITE);
-        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        topBar.add(lblTitulo, BorderLayout.CENTER);
 
+        topBar.add(lblTitulo, BorderLayout.WEST);
         add(topBar, BorderLayout.NORTH);
 
-        // Formulario
-        JPanel form = new JPanel();
-        form.setLayout(null);
-        form.setBackground(Color.WHITE);
+        //form
+        JPanel wrapper = new JPanel(new GridBagLayout());
+        wrapper.setBackground(COLOR_BACKGROUND);
+
+        RoundedCardPanel card = new RoundedCardPanel(18);
+        card.setBackground(COLOR_CARD_BG);
+        card.setBorderColor(COLOR_CARD_BORDER);
+        card.setPreferredSize(new Dimension(530, 430));
+        card.setLayout(null);
 
         int y = 30;
 
         // Usuario (NO editable)
-        form.add(crearLabel("Usuario:", 30, y));
+        card.add(crearLabel("Usuario:", 30, y));
         txtUsuario = crearCampo(150, y);
         txtUsuario.setEditable(false);
-        form.add(txtUsuario);
+        card.add(txtUsuario);
         y += 50;
 
         // Nombre
-        form.add(crearLabel("Nombre:", 30, y));
+        card.add(crearLabel("Nombre:", 30, y));
         txtNombre = crearCampo(150, y);
-        form.add(txtNombre);
+        card.add(txtNombre);
         y += 50;
 
         // Apellido
-        form.add(crearLabel("Apellido:", 30, y));
+        card.add(crearLabel("Apellido:", 30, y));
         txtApellido = crearCampo(150, y);
-        form.add(txtApellido);
+        card.add(txtApellido);
         y += 50;
 
         // Contraseña
-        form.add(crearLabel("Contraseña:", 30, y));
+        card.add(crearLabel("Contraseña:", 30, y));
         txtPass = crearCampo(150, y);
-        form.add(txtPass);
+        card.add(txtPass);
         y += 50;
 
         // Matrícula
-        form.add(crearLabel("Matrícula:", 30, y));
+        card.add(crearLabel("Matrícula:", 30, y));
         txtMatricula = crearCampo(150, y);
-        form.add(txtMatricula);
+        card.add(txtMatricula);
         y += 50;
 
         // Especialidad
-        form.add(crearLabel("Especialidad:", 30, y));
+        card.add(crearLabel("Especialidad:", 30, y));
         txtEspecialidad = crearCampo(150, y);
-        form.add(txtEspecialidad);
+        card.add(txtEspecialidad);
         y += 60;
 
-        // Botón Guardar
-        btnGuardar = new RoundedButton("Guardar Cambios");
-        btnGuardar.setBackground(new Color(0, 102, 204));
+        //guardar
+        RoundedButton btnGuardar = new RoundedButton("Guardar Cambios");
+        btnGuardar.setBackground(COLOR_ACCENT);
         btnGuardar.setForeground(Color.WHITE);
-        btnGuardar.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        btnGuardar.setBounds(150, y, 200, 40);
+        btnGuardar.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 16));
+        btnGuardar.setBounds(155, y, 200, 40);
         btnGuardar.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        form.add(btnGuardar);
 
         btnGuardar.addActionListener(e -> guardarCambios());
+        card.add(btnGuardar);
 
-        add(form, BorderLayout.CENTER);
+        wrapper.add(card);
+        add(wrapper, BorderLayout.CENTER);
     }
 
-    private JLabel crearLabel(String txt, int x, int y) {
-        JLabel lbl = new JLabel(txt);
-        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-        lbl.setBounds(x, y, 130, 30);
+
+
+    private JLabel crearLabel(String text, int x, int y) {
+        JLabel lbl = new JLabel(text);
+        lbl.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 16));
+        lbl.setForeground(MINT_DARK);
+        lbl.setBounds(x, y, 120, 30);
         return lbl;
     }
 
     private JTextField crearCampo(int x, int y) {
         JTextField txt = new RoundedTextField(12);
         txt.setBounds(x, y, 250, 35);
-        txt.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        txt.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        txt.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 14));
+        txt.setBorder(BorderFactory.createEmptyBorder(5, 12, 5, 12));
         return txt;
     }
 
@@ -159,7 +172,6 @@ public class ModificarMedicoFrame extends JFrame {
     }
 
 
-
     class RoundedTextField extends JTextField {
         private int radius;
 
@@ -176,7 +188,7 @@ public class ModificarMedicoFrame extends JFrame {
             g2.setColor(Color.WHITE);
             g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
 
-            g2.setColor(new Color(180, 180, 180));
+            g2.setColor(new Color(200, 200, 200));
             g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radius, radius);
 
             super.paintComponent(g);
@@ -184,4 +196,58 @@ public class ModificarMedicoFrame extends JFrame {
         }
     }
 
+    private static class RoundedCardPanel extends JPanel {
+        private final int radius;
+        private Color borderColor = new Color(200, 200, 200);
+
+        public RoundedCardPanel(int radius) {
+            this.radius = radius;
+            setOpaque(false);
+        }
+
+        public void setBorderColor(Color c) {
+            this.borderColor = c;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(getBackground());
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
+            g2.setColor(borderColor);
+            g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, radius, radius);
+        }
+    }
+
+    class RoundedButton extends JButton {
+        private int radius = 15;
+
+        public RoundedButton(String text) {
+            super(text);
+            setOpaque(false);
+            setFocusPainted(false);
+            setContentAreaFilled(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            g2.setColor(getBackground());
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+
+        @Override
+        public void paintBorder(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setColor(getBackground());
+            g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, radius, radius);
+            g2.dispose();
+        }
+    }
 }

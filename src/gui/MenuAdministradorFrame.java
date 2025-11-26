@@ -66,10 +66,10 @@ public class MenuAdministradorFrame extends JFrame {
         center.setOpaque(false);
         center.setLayout(new GridLayout(1, 3, 22, 0));
 
-        // ---- CARD PACIENTES ----
+        // CARD PACIENTES
         JPanel cardPacientes = crearCardConBotones(
                 "Gestión de Pacientes",
-                "/gui/img/Pacientes.png",
+                "/gui/img/gestionPacientes.png",
                 new String[]{"Alta Paciente", "Modificar Paciente"},
                 new Runnable[]{
                         () -> new AltaPacienteFrame(controller, admin).setVisible(true),
@@ -86,10 +86,10 @@ public class MenuAdministradorFrame extends JFrame {
                 }
         );
 
-        // ---- CARD MÉDICOS ----
+        // CARD MÉDICOS 
         JPanel cardMedicos = crearCardConBotones(
                 "Gestión de Médicos",
-                "/gui/img/Medicos.png",
+                "/gui/img/gestionMedicos.png",
                 new String[]{"Alta Médico", "Modificar Médico"},
                 new Runnable[]{
                         () -> new AltaMedicoFrame(controller, admin).setVisible(true),
@@ -106,22 +106,26 @@ public class MenuAdministradorFrame extends JFrame {
                 }
         );
 
-        // ---- CARD USUARIOS ----
+        //CARD USUARIOS
         JPanel cardUsuarios = crearCardConBotones(
                 "Funciones de Usuarios",
-                "/gui/img/Usuarios.png",
+                "/gui/img/gestionUsuarios.png",
                 new String[]{
+                        "Lista de usuarios",
                         "Resetear Contraseña",
                         "Bloquear Usuario",
                         "Desbloquear Usuario",
                         "Eliminar Usuario"
                 },
                 new Runnable[]{
+                        () -> new ListarUsuariosFrame(controller,admin).setVisible(true),                        
                         () -> new ResetearContraseniaFrame(controller, admin).setVisible(true),
-                        //() -> new BloquearUsuarioFrame(controller, admin).setVisible(true),
-                        //() -> new DesbloquearUsuarioFrame(controller, admin).setVisible(true),
-                        //() -> new EliminarUsuarioFrame(controller, admin).setVisible(true)
+                        () -> new BloquearUsuarioFrame(controller).setVisible(true),
+                        () -> new DesbloquearUsuarioFrame(controller).setVisible(true),
+                        () -> new EliminarUsuarioFrame(controller).setVisible(true),
+
                 }
+
         );
 
         center.add(cardPacientes);
@@ -180,7 +184,7 @@ public class MenuAdministradorFrame extends JFrame {
         JLabel lblIcon = new JLabel();
         try {
             ImageIcon icon = new ImageIcon(getClass().getResource(imagePath));
-            Image scaled = icon.getImage().getScaledInstance(42, 42, Image.SCALE_SMOOTH);
+            Image scaled = icon.getImage().getScaledInstance(64, 64, Image.SCALE_SMOOTH);
             lblIcon.setIcon(new ImageIcon(scaled));
         } catch (Exception e) {
             lblIcon.setText("?");

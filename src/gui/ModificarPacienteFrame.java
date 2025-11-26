@@ -2,11 +2,12 @@ package gui;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.geom.RoundRectangle2D;
 
 import dll.ControllerAdministrador;
 import bll.Administrador;
 import bll.Paciente;
+
+import static gui.UiPaleta.*;
 
 public class ModificarPacienteFrame extends JFrame {
 
@@ -15,9 +16,11 @@ public class ModificarPacienteFrame extends JFrame {
     private String usuarioBuscado;
 
     private JTextField txtNombre, txtApellido, txtUsuario, txtContrato, txtOS;
-    private JTextField txtPass;
+    private JPasswordField txtPass;
 
     private RoundedButton btnGuardar;
+
+    private static final String UI_FONT_FAMILY = "Segoe UI";
 
     public ModificarPacienteFrame(ControllerAdministrador controller, Administrador admin, String usuario) {
         this.controller = controller;
@@ -25,7 +28,7 @@ public class ModificarPacienteFrame extends JFrame {
         this.usuarioBuscado = usuario;
 
         setTitle("HealthHub - Modificar Paciente");
-        setSize(500, 520);
+        setSize(580, 560);
         setLocationRelativeTo(null);
         setResizable(false);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -36,91 +39,103 @@ public class ModificarPacienteFrame extends JFrame {
 
     private void initUI() {
 
+        getContentPane().setBackground(COLOR_BACKGROUND);
         setLayout(new BorderLayout());
 
-        //barra superior
-        JPanel topBar = new JPanel();
-        topBar.setBackground(new Color(0, 102, 204));
-        topBar.setPreferredSize(new Dimension(500, 60));
-        topBar.setLayout(new BorderLayout());
+        JPanel topBar = new JPanel(new BorderLayout());
+        topBar.setBackground(COLOR_PRIMARY);
+        topBar.setPreferredSize(new Dimension(getWidth(), 80));
+        topBar.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
-        JLabel lblTitulo = new JLabel("Modificar Paciente", SwingConstants.CENTER);
+        JLabel lblTitulo = new JLabel("Modificar Paciente");
+        lblTitulo.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 24));
         lblTitulo.setForeground(Color.WHITE);
-        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 20));
 
-        topBar.add(lblTitulo, BorderLayout.CENTER);
+        topBar.add(lblTitulo, BorderLayout.WEST);
         add(topBar, BorderLayout.NORTH);
 
-        JPanel form = new JPanel();
-        form.setLayout(null);
-        form.setBackground(Color.WHITE);
+        //card
+        JPanel wrapper = new JPanel(new GridBagLayout());
+        wrapper.setBackground(COLOR_BACKGROUND);
+
+        RoundedCardPanel card = new RoundedCardPanel(18);
+        card.setBackground(COLOR_CARD_BG);
+        card.setBorderColor(COLOR_CARD_BORDER);
+        card.setPreferredSize(new Dimension(530, 430));
+        card.setLayout(null);
 
         int y = 30;
 
-        // Usuario (no editable)
-        form.add(crearLabel("Usuario:", 30, y));
+        //Usuario (no editable)
+        card.add(crearLabel("Usuario:", 30, y));
         txtUsuario = crearCampo(150, y);
         txtUsuario.setEditable(false);
-        form.add(txtUsuario);
+        txtUsuario.setBackground(new Color(240, 240, 240));
+        card.add(txtUsuario);
         y += 50;
 
-        // Nombre
-        form.add(crearLabel("Nombre:", 30, y));
+        //Nombre
+        card.add(crearLabel("Nombre:", 30, y));
         txtNombre = crearCampo(150, y);
-        form.add(txtNombre);
+        card.add(txtNombre);
         y += 50;
 
-        // Apellido
-        form.add(crearLabel("Apellido:", 30, y));
+        //Apellido
+        card.add(crearLabel("Apellido:", 30, y));
         txtApellido = crearCampo(150, y);
-        form.add(txtApellido);
+        card.add(txtApellido);
         y += 50;
 
-        // Contraseña
-        form.add(crearLabel("Contraseña:", 30, y));
-        txtPass = crearCampo(150, y);
-        form.add(txtPass);
+        //Contraseña
+        card.add(crearLabel("Contraseña:", 30, y));
+        txtPass = new RoundedPasswordField(12);
+        txtPass.setBounds(150, y, 250, 35);
+        txtPass.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 14));
+        txtPass.setBorder(BorderFactory.createEmptyBorder(5, 12, 5, 12));
+        card.add(txtPass);
         y += 50;
 
-        // Contrato
-        form.add(crearLabel("N° Contrato:", 30, y));
+        //Contrato
+        card.add(crearLabel("N° Contrato:", 30, y));
         txtContrato = crearCampo(150, y);
-        form.add(txtContrato);
+        card.add(txtContrato);
         y += 50;
 
-        // Obra social
-        form.add(crearLabel("Obra Social:", 30, y));
+        //Obra Social
+        card.add(crearLabel("Obra Social:", 30, y));
         txtOS = crearCampo(150, y);
-        form.add(txtOS);
-        y += 60;
+        card.add(txtOS);
+        y += 70;
 
-        // Botón guardar
+        //Guardar
         btnGuardar = new RoundedButton("Guardar Cambios");
-        btnGuardar.setBackground(new Color(0, 102, 204));
+        btnGuardar.setBackground(COLOR_ACCENT);
         btnGuardar.setForeground(Color.WHITE);
-        btnGuardar.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        btnGuardar.setBounds(150, y, 200, 40);
+        btnGuardar.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 16));
+        btnGuardar.setBounds(155, y, 200, 40);
         btnGuardar.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnGuardar.setFocusPainted(false);
-        form.add(btnGuardar);
 
         btnGuardar.addActionListener(e -> guardarCambios());
 
-        add(form, BorderLayout.CENTER);
+        card.add(btnGuardar);
+
+        wrapper.add(card);
+        add(wrapper, BorderLayout.CENTER);
     }
 
     private JLabel crearLabel(String text, int x, int y) {
         JLabel lbl = new JLabel(text);
-        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-        lbl.setBounds(x, y, 130, 30);
+        lbl.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 16));
+        lbl.setForeground(MINT_DARK);
+        lbl.setBounds(x, y, 120, 30);
         return lbl;
     }
 
     private JTextField crearCampo(int x, int y) {
         JTextField txt = new RoundedTextField(12);
         txt.setBounds(x, y, 250, 35);
-        txt.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        txt.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        txt.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 14));
+        txt.setBorder(BorderFactory.createEmptyBorder(5, 12, 5, 12));
         return txt;
     }
 
@@ -143,29 +158,23 @@ public class ModificarPacienteFrame extends JFrame {
         txtOS.setText(p.getObraSocial());
     }
 
-
     private void guardarCambios() {
 
         String usr = txtUsuario.getText().trim();
         String nom = txtNombre.getText().trim();
         String ape = txtApellido.getText().trim();
-        String pass = txtPass.getText().trim();
+        String pass = new String(txtPass.getPassword()).trim();
         String nro = txtContrato.getText().trim();
         String os = txtOS.getText().trim();
 
         if (nom.isEmpty()) { mensaje("Ingrese el nombre."); return; }
         if (ape.isEmpty()) { mensaje("Ingrese el apellido."); return; }
         if (pass.isEmpty()) { mensaje("Ingrese la contraseña."); return; }
-        if (!nro.matches("\\d+")) { mensaje("Contrato debe ser numérico."); return; }
+        if (!nro.matches("\\d+")) { mensaje("El contrato debe ser numérico."); return; }
         if (os.isEmpty()) { mensaje("Ingrese la obra social."); return; }
 
         controller.modificarPaciente(
-                usr,
-                nom,
-                ape,
-                pass,
-                Integer.parseInt(nro),
-                os
+                usr, nom, ape, pass, Integer.parseInt(nro), os
         );
 
         JOptionPane.showMessageDialog(this, "Paciente modificado correctamente.");
@@ -177,12 +186,10 @@ public class ModificarPacienteFrame extends JFrame {
     }
 
 
-
     class RoundedTextField extends JTextField {
         private int radius;
 
         public RoundedTextField(int radius) {
-            super();
             this.radius = radius;
             setOpaque(false);
         }
@@ -195,7 +202,7 @@ public class ModificarPacienteFrame extends JFrame {
             g2.setColor(Color.WHITE);
             g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
 
-            g2.setColor(new Color(180, 180, 180));
+            g2.setColor(new Color(200, 200, 200));
             g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radius, radius);
 
             super.paintComponent(g);
@@ -203,4 +210,54 @@ public class ModificarPacienteFrame extends JFrame {
         }
     }
 
+    class RoundedPasswordField extends JPasswordField {
+        private int radius;
+
+        public RoundedPasswordField(int radius) {
+            this.radius = radius;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            g2.setColor(Color.WHITE);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
+
+            g2.setColor(new Color(200, 200, 200));
+            g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radius, radius);
+
+            super.paintComponent(g);
+            g2.dispose();
+        }
+    }
+
+    private static class RoundedCardPanel extends JPanel {
+        private final int radius;
+        private Color borderColor;
+
+        public RoundedCardPanel(int radius) {
+            this.radius = radius;
+            this.borderColor = new Color(200, 200, 200);
+            setOpaque(false);
+        }
+
+        public void setBorderColor(Color c) {
+            this.borderColor = c;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            g2.setColor(getBackground());
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
+
+            g2.setColor(borderColor);
+            g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radius, radius);
+        }
+    }
 }

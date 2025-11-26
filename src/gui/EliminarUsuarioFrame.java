@@ -6,17 +6,17 @@ import java.awt.*;
 import dll.ControllerAdministrador;
 import static gui.UiPaleta.*;
 
-public class BloquearUsuarioFrame extends JFrame {
+public class EliminarUsuarioFrame extends JFrame {
 
     private JTextField txtUsuario;
     private ControllerAdministrador controller;
 
     private static final String UI_FONT_FAMILY = "Segoe UI";
 
-    public BloquearUsuarioFrame(ControllerAdministrador controller) {
+    public EliminarUsuarioFrame(ControllerAdministrador controller) {
         this.controller = controller;
 
-        setTitle("HealthHub - Bloquear Usuario");
+        setTitle("HealthHub - Eliminar Usuario");
         setSize(580, 430);
         setLocationRelativeTo(null);
         setResizable(false);
@@ -35,7 +35,7 @@ public class BloquearUsuarioFrame extends JFrame {
         topBar.setPreferredSize(new Dimension(getWidth(), 80));
         topBar.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
-        JLabel lblTitulo = new JLabel("Bloquear Usuario");
+        JLabel lblTitulo = new JLabel("Eliminar Usuario");
         lblTitulo.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 24));
         lblTitulo.setForeground(Color.WHITE);
 
@@ -49,38 +49,39 @@ public class BloquearUsuarioFrame extends JFrame {
         RoundedCardPanel card = new RoundedCardPanel(18);
         card.setBackground(COLOR_CARD_BG);
         card.setBorderColor(COLOR_CARD_BORDER);
-        card.setPreferredSize(new Dimension(530, 220));
+        card.setPreferredSize(new Dimension(530, 260));
         card.setLayout(null);
 
         int y = 40;
 
         //Usuario
-        card.add(crearLabel("Usuario:", 30, y));
-        txtUsuario = crearCampo(160, y);
+        card.add(crearLabel("Usuario a eliminar:", 30, y));
+        txtUsuario = crearCampo(200, y);
         card.add(txtUsuario);
-        y += 60;
+        y += 55;
 
-        //Botón Bloquear
-        RoundedButton btnBloquear = new RoundedButton("Bloquear");
-        btnBloquear.setBackground(COLOR_ACCENT);
-        btnBloquear.setForeground(Color.WHITE);
-        btnBloquear.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 16));
-        btnBloquear.setBounds(160, y, 200, 40);
-        btnBloquear.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnBloquear.addActionListener(e -> bloquearUsuario());
-        card.add(btnBloquear);
+        //Botón Eliminar
+        RoundedButton btnEliminar = new RoundedButton("Eliminar");
+        btnEliminar.setBackground(new Color(220, 75, 75));
+        btnEliminar.setForeground(Color.WHITE);
+        btnEliminar.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 16));
+        btnEliminar.setBounds(165, y, 200, 40);
+        btnEliminar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        btnEliminar.addActionListener(e -> eliminarUsuario());
+        card.add(btnEliminar);
+        y += 55;
 
         wrapper.add(card);
         add(wrapper, BorderLayout.CENTER);
     }
 
-    //helpers
 
     private JLabel crearLabel(String txt, int x, int y) {
         JLabel lbl = new JLabel(txt);
         lbl.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 16));
         lbl.setForeground(MINT_DARK);
-        lbl.setBounds(x, y, 150, 30);
+        lbl.setBounds(x, y, 180, 30);
         return lbl;
     }
 
@@ -92,7 +93,7 @@ public class BloquearUsuarioFrame extends JFrame {
         return txt;
     }
 
-    private void bloquearUsuario() {
+    private void eliminarUsuario() {
         String usr = txtUsuario.getText().trim();
 
         if (usr.isEmpty()) {
@@ -100,11 +101,17 @@ public class BloquearUsuarioFrame extends JFrame {
             return;
         }
 
-        controller.bloquearUsuario(usr);
-        JOptionPane.showMessageDialog(this, "Usuario bloqueado correctamente.");
-        dispose();
+        try {
+            controller.eliminarUsuario(usr);
+            JOptionPane.showMessageDialog(this, "Usuario eliminado exitosamente.");
+            dispose();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Error: " + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
     }
-
 
 
     class RoundedTextField extends JTextField {
