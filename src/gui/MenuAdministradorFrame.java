@@ -2,22 +2,23 @@ package gui;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
 import bll.Administrador;
 import dll.ControllerAdministrador;
-import javax.swing.JFrame;
+import static gui.UiPaleta.*;
 
 public class MenuAdministradorFrame extends JFrame {
 
     private Administrador admin;
     private ControllerAdministrador controller;
 
+    private static final String UI_FONT_FAMILY = "Segoe UI";
+
     public MenuAdministradorFrame(ControllerAdministrador controller, Administrador admin) {
         this.admin = admin;
         this.controller = controller;
 
         setTitle("HealthHub - Panel del Administrador");
-        setSize(900, 600);
+        setSize(980, 620);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
@@ -25,198 +26,228 @@ public class MenuAdministradorFrame extends JFrame {
         initUI();
     }
 
-    public MenuAdministradorFrame() {
-        setTitle("Menú Administrador");
-        setSize(400,300);
-        setLocationRelativeTo(null);
-        setResizable(false);
-
-        initUI();
-    }
-
     private void initUI() {
+
+        getContentPane().setBackground(COLOR_BACKGROUND);
         setLayout(new BorderLayout());
 
-        // barra superior
-        
-        JPanel topBar = new JPanel();
-        topBar.setBackground(new Color(0, 102, 204));
-        topBar.setPreferredSize(new Dimension(900, 60));
-        topBar.setLayout(new BorderLayout());
+        // ░░ HEADER ░░
+        JPanel topBar = new JPanel(new BorderLayout());
+        topBar.setBackground(COLOR_PRIMARY);
+        topBar.setPreferredSize(new Dimension(getWidth(), 85));
+        topBar.setBorder(BorderFactory.createEmptyBorder(10, 40, 15, 40));
 
-        JLabel lblTitulo = new JLabel("Panel del Administrador", SwingConstants.CENTER);
+        JLabel lblTitulo = new JLabel("Panel del Administrador");
         lblTitulo.setForeground(Color.WHITE);
-        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        lblTitulo.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 26));
 
-        topBar.add(lblTitulo, BorderLayout.CENTER);
+        JLabel lblNombre = new JLabel(
+                capitalizarNombre(admin.getNombreCompleto()) + "  |  Administrador"
+        );
+        lblNombre.setForeground(new Color(230, 245, 255));
+        lblNombre.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 14));
+
+        JPanel info = new JPanel();
+        info.setOpaque(false);
+        info.setLayout(new BoxLayout(info, BoxLayout.Y_AXIS));
+        info.add(lblTitulo);
+        info.add(Box.createVerticalStrut(4));
+        info.add(lblNombre);
+
+        topBar.add(info, BorderLayout.WEST);
         add(topBar, BorderLayout.NORTH);
 
-        //panel paciente/medico
-        JPanel center = new JPanel(new GridLayout(1, 2));
-        center.setBackground(Color.WHITE);
+        // ░░ CENTRO ░░
+        JPanel wrapperCenter = new JPanel(new BorderLayout());
+        wrapperCenter.setOpaque(false);
+        wrapperCenter.setBorder(BorderFactory.createEmptyBorder(10, 32, 10, 32));
 
-        center.add(crearPanelSeccion("PACIENTES", new String[]{
-                "Alta de Paciente",
-                "Modificar Paciente",
-        }, "PAC"));
+        JPanel center = new JPanel();
+        center.setOpaque(false);
+        center.setLayout(new GridLayout(1, 3, 22, 0));
 
-        center.add(crearPanelSeccion("MÉDICOS", new String[]{
-                "Alta de Médico",
-                "Modificar Médico",
-        	}, "MED"));
-
-
-        add(center, BorderLayout.CENTER);
-
-        //separadpr
-        add(crearPanelFuncionesGenerales(), BorderLayout.SOUTH);
-    }
-
-    private JPanel crearPanelSeccion(String titulo, String[] opciones, String tipo) {
-
-        JPanel panel = new JPanel();
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-
-        JLabel lbl = new JLabel(titulo, SwingConstants.CENTER);
-        lbl.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        lbl.setAlignmentX(Component.CENTER_ALIGNMENT);
-        lbl.setForeground(new Color(0, 102, 204));
-        panel.add(lbl);
-        panel.add(Box.createVerticalStrut(20));
-
-        for (String op : opciones) {
-            JButton btn = crearBotonSeccion(op);
-            btn.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-            // Alta paciente
-            if (tipo.equals("PAC") && op.contains("Alta")) {
-                btn.addActionListener(e -> new AltaPacienteFrame(controller, admin).setVisible(true));
-            }
-
-            // Modificar paciente
-            if (tipo.equals("PAC") && op.contains("Modificar")) {
-                btn.addActionListener(e -> {
-                    String usuario = JOptionPane.showInputDialog(
-                            this,
-                            "Ingrese el usuario del paciente a modificar:",
-                            "Modificar Paciente",
-                            JOptionPane.QUESTION_MESSAGE
-                    );
-
-                    if (usuario == null || usuario.trim().isEmpty())
-                        return;
-
-                    new ModificarPacienteFrame(controller, admin, usuario.trim()).setVisible(true);
-                });
-            }
-
-            // Alta médico
-            if (tipo.equals("MED") && op.contains("Alta")) {
-                btn.addActionListener(e -> new AltaMedicoFrame(controller, admin).setVisible(true));
-            }
-
-            // Modificar médico 
-            if (tipo.equals("MED") && op.contains("Modificar")) {
-            	btn.addActionListener(e -> {
-            	    String usuario = JOptionPane.showInputDialog(
-            	            this,
-            	            "Ingrese el usuario del médico a modificar:",
-            	            "Modificar Médico",
-            	            JOptionPane.QUESTION_MESSAGE
-            	    );
-
-            	    if (usuario == null || usuario.trim().isEmpty()) return;
-
-            	    new ModificarMedicoFrame(controller, usuario.trim()).setVisible(true);
-            	});
-
-            }
-
-            panel.add(btn);
-            panel.add(Box.createVerticalStrut(10));
-        }
-        
-
-        return panel;
-    }
-
-    //funciones de usr
-    
-    private JPanel crearPanelFuncionesGenerales() {
-
-        JPanel wrapper = new JPanel();
-        wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
-        wrapper.setBackground(Color.WHITE);
-        wrapper.setBorder(BorderFactory.createEmptyBorder(10, 30, 20, 30));
-
-        JLabel titulo = new JLabel("FUNCIONES GENERALES", SwingConstants.CENTER);
-        titulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        titulo.setForeground(new Color(0, 102, 204));
-        titulo.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-        JSeparator sepTop = new JSeparator();
-        sepTop.setForeground(new Color(0, 102, 204));
-        sepTop.setMaximumSize(new Dimension(800, 2));
-
-        JSeparator sepBottom = new JSeparator();
-        sepBottom.setForeground(new Color(0, 102, 204));
-        sepBottom.setMaximumSize(new Dimension(800, 2));
-
-        //botones
-        JPanel grid = new JPanel(new GridLayout(2, 3, 15, 15));
-        grid.setBackground(Color.WHITE);
-        grid.setBorder(BorderFactory.createEmptyBorder(15, 150, 15, 150));
-
-        JButton btnListar = crearBotonGeneral("Listar Usuarios");
-        btnListar.addActionListener(e -> 
-            new ListarUsuariosFrame(controller, admin).setVisible(true)
+        // ---- CARD PACIENTES ----
+        JPanel cardPacientes = crearCardConBotones(
+                "Gestión de Pacientes",
+                "/gui/img/Pacientes.png",
+                new String[]{"Alta Paciente", "Modificar Paciente"},
+                new Runnable[]{
+                        () -> new AltaPacienteFrame(controller, admin).setVisible(true),
+                        () -> {
+                            String usuario = JOptionPane.showInputDialog(
+                                    this,
+                                    "Ingrese el usuario del paciente:",
+                                    "Modificar Paciente",
+                                    JOptionPane.QUESTION_MESSAGE
+                            );
+                            if (usuario != null && !usuario.isBlank())
+                                new ModificarPacienteFrame(controller, admin, usuario.trim()).setVisible(true);
+                        }
+                }
         );
-        grid.add(btnListar);
 
-        
-        grid.add(crearBotonGeneral("Resetear contraseña"));
-        grid.add(crearBotonGeneral("Cerrar Sesión"));
-        grid.add(crearBotonGeneral("Bloquear Usuario"));
-        grid.add(crearBotonGeneral("Desbloquear Usuario"));
-        grid.add(crearBotonGeneral("Eliminar Usuario"));
+        // ---- CARD MÉDICOS ----
+        JPanel cardMedicos = crearCardConBotones(
+                "Gestión de Médicos",
+                "/gui/img/Medicos.png",
+                new String[]{"Alta Médico", "Modificar Médico"},
+                new Runnable[]{
+                        () -> new AltaMedicoFrame(controller, admin).setVisible(true),
+                        () -> {
+                            String usuario = JOptionPane.showInputDialog(
+                                    this,
+                                    "Ingrese el usuario del médico:",
+                                    "Modificar Médico",
+                                    JOptionPane.QUESTION_MESSAGE
+                            );
+                            if (usuario != null && !usuario.isBlank())
+                                new ModificarMedicoFrame(controller, usuario.trim()).setVisible(true);
+                        }
+                }
+        );
 
-        wrapper.add(Box.createVerticalStrut(10));
-        wrapper.add(titulo);
-        wrapper.add(Box.createVerticalStrut(5));
-        wrapper.add(sepTop);
-        wrapper.add(Box.createVerticalStrut(15));
-        wrapper.add(grid);
-        wrapper.add(Box.createVerticalStrut(10));
-        wrapper.add(sepBottom);
+        // ---- CARD USUARIOS ----
+        JPanel cardUsuarios = crearCardConBotones(
+                "Funciones de Usuarios",
+                "/gui/img/Usuarios.png",
+                new String[]{
+                        "Resetear Contraseña",
+                        "Bloquear Usuario",
+                        "Desbloquear Usuario",
+                        "Eliminar Usuario"
+                },
+                new Runnable[]{
+                        () -> new ResetearContraseniaFrame(controller, admin).setVisible(true),
+                        //() -> new BloquearUsuarioFrame(controller, admin).setVisible(true),
+                        //() -> new DesbloquearUsuarioFrame(controller, admin).setVisible(true),
+                        //() -> new EliminarUsuarioFrame(controller, admin).setVisible(true)
+                }
+        );
 
-        return wrapper;
+        center.add(cardPacientes);
+        center.add(cardMedicos);
+        center.add(cardUsuarios);
+
+        wrapperCenter.add(center, BorderLayout.CENTER);
+        add(wrapperCenter, BorderLayout.CENTER);
+
+        // FOOTER
+        JPanel footer = new JPanel(new BorderLayout());
+        footer.setBackground(COLOR_BACKGROUND);
+        footer.setBorder(BorderFactory.createEmptyBorder(0, 40, 20, 40));
+
+        RoundedButton btnCerrar = new RoundedButton("Cerrar sesión");
+        btnCerrar.setBackground(COLOR_DANGER);
+        btnCerrar.setForeground(Color.WHITE);
+        btnCerrar.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 13));
+        btnCerrar.setFocusPainted(false);
+        btnCerrar.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
+        btnCerrar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        btnCerrar.addActionListener(e -> {
+            new LoginFrame().setVisible(true);
+            dispose();
+        });
+
+        JPanel rightFooter = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        rightFooter.setOpaque(false);
+        rightFooter.add(btnCerrar);
+
+        footer.add(rightFooter, BorderLayout.EAST);
+        add(footer, BorderLayout.SOUTH);
     }
 
-    private JButton crearBotonSeccion(String texto) {
-        RoundedButton btn = new RoundedButton(texto);
-        btn.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-        btn.setBackground(new Color(230, 230, 230));
-        btn.setForeground(Color.BLACK);
-        btn.setFocusPainted(false);
-        btn.setPreferredSize(new Dimension(250, 40));
-        btn.setMaximumSize(new Dimension(250, 40));
-        btn.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        return btn;
+    // ░░ CARD CON LISTA DE BOTONES ░░
+    private JPanel crearCardConBotones(
+            String titulo,
+            String imagePath,
+            String[] botones,
+            Runnable[] acciones
+    ) {
+
+        RoundedCardPanel card = new RoundedCardPanel(16);
+        card.setBackground(COLOR_CARD_BG);
+        card.setBorderColor(COLOR_CARD_BORDER);
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
+        card.setPreferredSize(new Dimension(285, 260));
+
+        JLabel lblTitulo = new JLabel(titulo, SwingConstants.CENTER);
+        lblTitulo.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 17));
+        lblTitulo.setForeground(MINT_DARK);
+        lblTitulo.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel lblIcon = new JLabel();
+        try {
+            ImageIcon icon = new ImageIcon(getClass().getResource(imagePath));
+            Image scaled = icon.getImage().getScaledInstance(42, 42, Image.SCALE_SMOOTH);
+            lblIcon.setIcon(new ImageIcon(scaled));
+        } catch (Exception e) {
+            lblIcon.setText("?");
+        }
+        lblIcon.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JPanel lista = new JPanel();
+        lista.setOpaque(false);
+        lista.setLayout(new GridLayout(botones.length, 1, 6, 6));
+        lista.setMaximumSize(new Dimension(240, botones.length * 42));
+
+        for (int i = 0; i < botones.length; i++) {
+            RoundedButton b = new RoundedButton(botones[i]);
+            b.setBackground(COLOR_ACCENT);
+            b.setForeground(Color.WHITE);
+            b.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 13));
+            b.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            b.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
+            int finalI = i;
+            b.addActionListener(e -> acciones[finalI].run());
+            lista.add(b);
+        }
+
+        card.add(lblIcon);
+        card.add(Box.createVerticalStrut(15));
+        card.add(lblTitulo);
+        card.add(Box.createVerticalStrut(15));
+        card.add(lista);
+
+        return card;
     }
 
+    private String capitalizarNombre(String s) {
+        if (s == null || s.isBlank()) return "";
+        String[] partes = s.toLowerCase().split(" ");
+        StringBuilder sb = new StringBuilder();
+        for (String p : partes) {
+            if (!p.isBlank())
+                sb.append(Character.toUpperCase(p.charAt(0))).append(p.substring(1)).append(" ");
+        }
+        return sb.toString().trim();
+    }
 
+    // PANEL REDONDEADO
+    private static class RoundedCardPanel extends JPanel {
+        private final int radius;
+        private Color borderColor = new Color(200, 200, 200);
 
-    private JButton crearBotonGeneral(String texto) { 
-    	RoundedButton btn = new RoundedButton(texto); 
-    	btn.setFont(new Font("Segoe UI", Font.BOLD, 14)); 
-    	btn.setBackground(new Color(0, 102, 204)); 
-    	btn.setForeground(Color.WHITE); 
-    	btn.setFocusPainted(false); 
-    	btn.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); 
-    	btn.setCursor(new Cursor(Cursor.HAND_CURSOR)); 
-    	return btn; }
+        public RoundedCardPanel(int radius) {
+            this.radius = radius;
+            setOpaque(false);
+        }
 
+        public void setBorderColor(Color c) {
+            borderColor = c;
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(getBackground());
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
+
+            g2.setColor(borderColor);
+            g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radius, radius);
+        }
+    }
 }
