@@ -5,8 +5,7 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import static gui.UiPaleta.*;
-
-
+import static gui.UiFonts.*;
 
 import bll.Medico;
 
@@ -14,7 +13,7 @@ public class MenuMedicoFrame extends JFrame {
 
 	private final Medico medico;
 
-	private static final String UI_FONT_FAMILY = "Segoe UI";
+	
 	public MenuMedicoFrame(Medico medico) {
 		this.medico = medico;
 
@@ -39,12 +38,12 @@ public class MenuMedicoFrame extends JFrame {
 
 		JLabel lblTitulo = new JLabel("Panel del Médico");
 		lblTitulo.setForeground(Color.WHITE);
-		lblTitulo.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 26));
+		lblTitulo.setFont(H1_TITLE);
 
 		JLabel lblNombre = new JLabel("Dra. " + capitalizarNombre(medico.getNombreCompleto()) + "  |  "
 				+ capitalizarNombre(medico.getEspecialidad()));
 		lblNombre.setForeground(new Color(230, 245, 255));
-		lblNombre.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 14));
+		lblNombre.setFont(BODY_SMALL);
 
 		JPanel info = new JPanel();
 		info.setOpaque(false);
@@ -93,7 +92,7 @@ public class MenuMedicoFrame extends JFrame {
 		RoundedButton btnCerrar = new RoundedButton("Cerrar sesión");
 		btnCerrar.setBackground(COLOR_DANGER);
 		btnCerrar.setForeground(Color.WHITE);
-		btnCerrar.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 13));
+		btnCerrar.setFont(BUTTON);
 		btnCerrar.setFocusPainted(false);
 		btnCerrar.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
 		btnCerrar.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -140,18 +139,18 @@ public class MenuMedicoFrame extends JFrame {
 		// Titulo
 		JLabel lblTitulo = new JLabel(titulo, SwingConstants.CENTER);
 		lblTitulo.setAlignmentX(Component.CENTER_ALIGNMENT);
-		lblTitulo.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 17));
+		lblTitulo.setFont(CARD_TITLE);
 		lblTitulo.setForeground(MINT_DARK);
 
 		// Descripción
 		JLabel lblDesc = new JLabel("<html><center>" + descripcion + "</center></html>", SwingConstants.CENTER);
 		lblDesc.setAlignmentX(Component.CENTER_ALIGNMENT);
-		lblDesc.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 12));
+		lblDesc.setFont(BODY_SMALL);
 		lblDesc.setForeground(COLOR_TEXT_MUTED);
 		
 		JLabel lblMeta = new JLabel("<html><center>" + meta + "</center></html>", SwingConstants.CENTER);
 		lblMeta.setAlignmentX(Component.CENTER_ALIGNMENT);
-		lblMeta.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 11));
+		lblMeta.setFont(BODY_SMALL);
 		lblMeta.setForeground(new Color(130, 130, 130));
 
 		// Boton
@@ -159,7 +158,7 @@ public class MenuMedicoFrame extends JFrame {
 		btn.setAlignmentX(Component.CENTER_ALIGNMENT);
 		btn.setBackground(COLOR_ACCENT);
 		btn.setForeground(Color.WHITE);
-		btn.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 13));
+		btn.setFont(BUTTON);
 		btn.setFocusPainted(false);
 		btn.setBorder(BorderFactory.createEmptyBorder(6, 18, 6, 18));
 		btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -257,3 +256,4 @@ public class MenuMedicoFrame extends JFrame {
 		return sb.toString().trim();
 	}
 }
+
