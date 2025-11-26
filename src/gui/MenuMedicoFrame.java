@@ -7,8 +7,6 @@ import java.awt.event.MouseEvent;
 import static gui.UiPaleta.*;
 import static gui.UiFonts.*;
 
-
-
 import bll.Medico;
 
 public class MenuMedicoFrame extends JFrame {
@@ -258,3 +256,4 @@ public class MenuMedicoFrame extends JFrame {
 		return sb.toString().trim();
 	}
 }
+
