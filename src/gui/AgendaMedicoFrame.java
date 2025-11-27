@@ -187,17 +187,22 @@ public class AgendaMedicoFrame extends JFrame {
 		RoundedButton btnConsulta = new RoundedButton("Registrar consulta");
 		estiloBotonAccion(btnConsulta, COLOR_ACCENT);
 
+		RoundedButton btnHistorial = new RoundedButton("Ver historial");
+		estiloBotonAccion(btnHistorial, COLOR_ACCENT);
+
 		RoundedButton btnCancelar = new RoundedButton("Cancelar turno");
 		estiloBotonAccion(btnCancelar, COLOR_DANGER);
 
 		btnConfirmar.addActionListener(e -> confirmarTurnoSeleccionado());
 		btnReprogramar.addActionListener(e -> reprogramarTurnoSeleccionado());
 		btnConsulta.addActionListener(e -> registrarConsultaTurnoSeleccionado());
+		btnHistorial.addActionListener(e -> verHistorialPacienteSeleccionado());
 		btnCancelar.addActionListener(e -> cancelarTurnoSeleccionado());
 
 		panelAcciones.add(btnConfirmar);
 		panelAcciones.add(btnReprogramar);
 		panelAcciones.add(btnConsulta);
+		panelAcciones.add(btnHistorial);
 		panelAcciones.add(btnCancelar);
 
 		centerWrapper.add(panelAcciones, BorderLayout.SOUTH);
@@ -612,108 +617,209 @@ public class AgendaMedicoFrame extends JFrame {
 		dlg.setVisible(true);
 	}
 
-	// Pop up de confirmación
-	private boolean mostrarDialogoConfirmacion(String titulo, String mensaje) {
-		final boolean[] resultado = { false };
+    private void verHistorialPacienteSeleccionado() {
+        String usuarioPac = getUsuarioPacienteSeleccionado();
+        if (usuarioPac == null || usuarioPac.isBlank()) {
+            mostrarInfo("Historial", "No se pudo identificar al paciente del turno seleccionado");
+            return;
+        }
 
-		JDialog dlg = new JDialog(this, titulo, true);
-		dlg.setSize(420, 170);
-		dlg.setLocationRelativeTo(this);
-		dlg.setLayout(new BorderLayout());
-		dlg.getContentPane().setBackground(Color.WHITE);
+        try {
+            java.util.List<ControllerMedico.ConsultaItem> consultas =
+                    controllerMedico.obtenerConsultasPaciente(usuarioPac);
 
-		JPanel content = new JPanel(new BorderLayout());
-		content.setBackground(Color.WHITE);
-		content.setBorder(BorderFactory.createEmptyBorder(16, 20, 10, 20));
+            if (consultas.isEmpty()) {
+                mostrarInfo("Historial", "El paciente no tiene consultas registradas con este médico");
+                return;
+            }
 
-		JLabel lbl = new JLabel("<html>" + mensaje + "</html>");
-		lbl.setFont(BODY);
-		content.add(lbl, BorderLayout.CENTER);
+            JDialog dlg = new JDialog(this, "Historial de consultas", true);
+            dlg.setSize(780, 420);
+            dlg.setLocationRelativeTo(this);
+            dlg.setLayout(new BorderLayout());
+            dlg.getContentPane().setBackground(COLOR_BACKGROUND);
 
-		dlg.add(content, BorderLayout.CENTER);
+            // Header
+            JPanel header = new JPanel(new BorderLayout());
+            header.setBackground(COLOR_PRIMARY);
+            header.setBorder(BorderFactory.createEmptyBorder(10, 16, 10, 16));
+            JLabel lblTitulo = new JLabel("Historial de consultas del paciente");
+            lblTitulo.setForeground(Color.WHITE);
+            lblTitulo.setFont(H2_SECTION);
+            header.add(lblTitulo, BorderLayout.WEST);
+            dlg.add(header, BorderLayout.NORTH);
 
-		JPanel panelBtns = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
-		panelBtns.setBackground(Color.WHITE);
+            // Tabla
+            String[] columnas = {"Fecha", "Motivo", "Diagnóstico", "Tratamiento", "Recomendaciones"};
+            DefaultTableModel model = new DefaultTableModel(columnas, 0) {
+                @Override
+                public boolean isCellEditable(int row, int column) {
+                    return false;
+                }
+            };
 
-		RoundedButton btnNo = new RoundedButton("No");
-		btnNo.setBackground(COLOR_DANGER);
-		btnNo.setForeground(Color.WHITE);
-		btnNo.setFont(BUTTON);
-		btnNo.setBorder(BorderFactory.createEmptyBorder(6, 18, 6, 18));
-		btnNo.setFocusPainted(false);
-		btnNo.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
-		RoundedButton btnSi = new RoundedButton("Sí");
-		btnSi.setBackground(COLOR_ACCENT);
-		btnSi.setForeground(Color.WHITE);
-		btnSi.setFont(BUTTON);
-		btnSi.setBorder(BorderFactory.createEmptyBorder(6, 18, 6, 18));
-		btnSi.setFocusPainted(false);
-		btnSi.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            for (ControllerMedico.ConsultaItem c : consultas) {
+                String fechaStr = c.fecha() != null ? c.fecha().format(fmt) : "";
+                model.addRow(new Object[]{
+                        fechaStr,
+                        c.motivo(),
+                        c.diagnostico(),
+                        c.tratamiento(),
+                        c.seguimiento()
+                });
+            }
 
-		btnNo.addActionListener(e -> {
-			resultado[0] = false;
-			dlg.dispose();
-		});
+            JTable tablaHist = new JTable(model);
+            tablaHist.setRowHeight(24);
+            tablaHist.setFont(BODY_SMALL);
+            tablaHist.getTableHeader().setFont(BODY);
+            tablaHist.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
-		btnSi.addActionListener(e -> {
-			resultado[0] = true;
-			dlg.dispose();
-		});
+            // Anchos de columna
+            tablaHist.getColumnModel().getColumn(0).setPreferredWidth(130); // fecha
+            tablaHist.getColumnModel().getColumn(1).setPreferredWidth(180); // motivo
+            tablaHist.getColumnModel().getColumn(2).setPreferredWidth(180); // diag
+            tablaHist.getColumnModel().getColumn(3).setPreferredWidth(180); // trat
+            tablaHist.getColumnModel().getColumn(4).setPreferredWidth(200); // recos
 
-		panelBtns.add(btnNo);
-		panelBtns.add(btnSi);
+            JScrollPane scroll = new JScrollPane(tablaHist);
+            scroll.getViewport().setBackground(Color.WHITE);
 
-		dlg.add(panelBtns, BorderLayout.SOUTH);
+            JPanel center = new JPanel(new BorderLayout());
+            center.setBackground(COLOR_BACKGROUND);
+            center.setBorder(BorderFactory.createEmptyBorder(10, 16, 10, 16));
+            center.add(scroll, BorderLayout.CENTER);
 
-		dlg.setVisible(true);
-		return resultado[0];
-	}
+            dlg.add(center, BorderLayout.CENTER);
 
-	private void mostrarInfo(String titulo, String mensaje) {
-	    mostrarDialogoMensaje(titulo, mensaje, COLOR_ACCENT);
-	}
+            // Footer
+            JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
+            footer.setBackground(COLOR_BACKGROUND);
+            footer.setBorder(BorderFactory.createEmptyBorder(0, 16, 12, 16));
 
-	private void mostrarError(String titulo, String mensaje) {
-	    mostrarDialogoMensaje(titulo, mensaje, COLOR_DANGER);
-	}
+            RoundedButton btnCerrar = new RoundedButton("Cerrar");
+            btnCerrar.setBackground(Color.WHITE);
+            btnCerrar.setForeground(COLOR_PRIMARY);
+            btnCerrar.setFont(BUTTON);
+            btnCerrar.setBorder(BorderFactory.createLineBorder(COLOR_PRIMARY, 1, true));
+            btnCerrar.setFocusPainted(false);
+            btnCerrar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            btnCerrar.addActionListener(e -> dlg.dispose());
 
-	private void mostrarDialogoMensaje(String titulo, String mensaje, Color buttonBg) {
+            footer.add(btnCerrar);
+            dlg.add(footer, BorderLayout.SOUTH);
 
-		JDialog dlg = new JDialog(this, titulo, true);
-		dlg.setSize(380, 160);
-		dlg.setLocationRelativeTo(this);
-		dlg.setLayout(new BorderLayout());
-		dlg.getContentPane().setBackground(Color.WHITE);
+            dlg.setVisible(true);
 
-		JPanel content = new JPanel(new BorderLayout());
-		content.setBackground(Color.WHITE);
-		content.setBorder(BorderFactory.createEmptyBorder(14, 18, 10, 18));
+        } catch (Exception ex) {
+            mostrarError("Historial", "Error al obtener el historial: " + ex.getMessage());
+        }
+    }
 
-		JLabel lblMsg = new JLabel("<html>" + mensaje + "</html>");
-		lblMsg.setFont(BODY);
-		content.add(lblMsg, BorderLayout.CENTER);
+    // Pop up de confirmación
+    private boolean mostrarDialogoConfirmacion(String titulo, String mensaje) {
+        final boolean[] resultado = {false};
 
-		dlg.add(content, BorderLayout.CENTER);
+        JDialog dlg = new JDialog(this, titulo, true);
+        dlg.setSize(420, 170);
+        dlg.setLocationRelativeTo(this);
+        dlg.setLayout(new BorderLayout());
+        dlg.getContentPane().setBackground(Color.WHITE);
 
-		// Botón Aceptar
-		JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
-		footer.setBackground(Color.WHITE);
+        JPanel content = new JPanel(new BorderLayout());
+        content.setBackground(Color.WHITE);
+        content.setBorder(BorderFactory.createEmptyBorder(16, 20, 10, 20));
 
-		RoundedButton btnOk = new RoundedButton("Aceptar");
-		btnOk.setBackground(buttonBg);
-		btnOk.setForeground(Color.WHITE);
-		btnOk.setFont(BUTTON);
-		btnOk.setBorder(BorderFactory.createEmptyBorder(6, 18, 6, 18));
-		btnOk.setFocusPainted(false);
-		btnOk.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        JLabel lbl = new JLabel("<html>" + mensaje + "</html>");
+        lbl.setFont(BODY);
+        content.add(lbl, BorderLayout.CENTER);
 
-		btnOk.addActionListener(e -> dlg.dispose());
+        dlg.add(content, BorderLayout.CENTER);
 
-		footer.add(btnOk);
-		dlg.add(footer, BorderLayout.SOUTH);
+        JPanel panelBtns = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
+        panelBtns.setBackground(Color.WHITE);
 
-		dlg.setVisible(true);
-	}
+        RoundedButton btnNo = new RoundedButton("No");
+        btnNo.setBackground(COLOR_DANGER);
+        btnNo.setForeground(Color.WHITE);
+        btnNo.setFont(BUTTON);
+        btnNo.setBorder(BorderFactory.createEmptyBorder(6, 18, 6, 18));
+        btnNo.setFocusPainted(false);
+        btnNo.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        RoundedButton btnSi = new RoundedButton("Sí");
+        btnSi.setBackground(COLOR_ACCENT);
+        btnSi.setForeground(Color.WHITE);
+        btnSi.setFont(BUTTON);
+        btnSi.setBorder(BorderFactory.createEmptyBorder(6, 18, 6, 18));
+        btnSi.setFocusPainted(false);
+        btnSi.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        btnNo.addActionListener(e -> {
+            resultado[0] = false;
+            dlg.dispose();
+        });
+
+        btnSi.addActionListener(e -> {
+            resultado[0] = true;
+            dlg.dispose();
+        });
+
+        panelBtns.add(btnNo);
+        panelBtns.add(btnSi);
+
+        dlg.add(panelBtns, BorderLayout.SOUTH);
+
+        dlg.setVisible(true);
+        return resultado[0];
+    }
+
+    private void mostrarInfo(String titulo, String mensaje) {
+        mostrarDialogoMensaje(titulo, mensaje, COLOR_ACCENT);
+    }
+
+    private void mostrarError(String titulo, String mensaje) {
+        mostrarDialogoMensaje(titulo, mensaje, COLOR_DANGER);
+    }
+
+    private void mostrarDialogoMensaje(String titulo, String mensaje, Color buttonBg) {
+        JDialog dlg = new JDialog(this, titulo, true);
+        dlg.setSize(380, 160);
+        dlg.setLocationRelativeTo(this);
+        dlg.setLayout(new BorderLayout());
+        dlg.getContentPane().setBackground(Color.WHITE);
+
+        JPanel content = new JPanel(new BorderLayout());
+        content.setBackground(Color.WHITE);
+        content.setBorder(BorderFactory.createEmptyBorder(14, 18, 10, 18));
+
+        JLabel lblMsg = new JLabel("<html>" + mensaje + "</html>");
+        lblMsg.setFont(BODY);
+        content.add(lblMsg, BorderLayout.CENTER);
+
+        dlg.add(content, BorderLayout.CENTER);
+
+        JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
+        footer.setBackground(Color.WHITE);
+
+        RoundedButton btnOk = new RoundedButton("Aceptar");
+        btnOk.setBackground(buttonBg);
+        btnOk.setForeground(Color.WHITE);
+        btnOk.setFont(BUTTON);
+        btnOk.setBorder(BorderFactory.createEmptyBorder(6, 18, 6, 18));
+        btnOk.setFocusPainted(false);
+        btnOk.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        btnOk.addActionListener(e -> dlg.dispose());
+
+        footer.add(btnOk);
+        dlg.add(footer, BorderLayout.SOUTH);
+
+        dlg.setVisible(true);
+    }
 
 }
+
+
