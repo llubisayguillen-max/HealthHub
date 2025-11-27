@@ -209,6 +209,8 @@ public class LoginFrame extends JFrame {
 			}
 			}
 
+			dispose();
+
 		} catch (Exception ex) {
 			mostrarError("Error", ex.getMessage());
 		}
