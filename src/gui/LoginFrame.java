@@ -24,7 +24,7 @@ public class LoginFrame extends JFrame {
 	private final ControllerUsuario usuarioController = new ControllerUsuario();
 
 	public LoginFrame() {
-		setTitle("Sistema de Salud - Login");
+		setTitle("HealthHub - Inicio de sesión");
 		setSize(900, 450);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLocationRelativeTo(null);
@@ -39,8 +39,6 @@ public class LoginFrame extends JFrame {
 		JPanel leftPanel = new JPanel();
 		leftPanel.setBackground(COLOR_PRIMARY);
 		leftPanel.setPreferredSize(new Dimension(300, getHeight()));
-
-		// Layout vertical
 		leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
 
 		// Logo
@@ -172,24 +170,24 @@ public class LoginFrame extends JFrame {
 		String pass = new String(txtPassword.getPassword()).trim();
 
 		if (usuario.isEmpty() || pass.isEmpty()) {
-			JOptionPane.showMessageDialog(this, "Debe completar todos los campos");
+			mostrarInfo("Inicio de sesión", "Debés completar todos los campos.");
 			return;
 		}
 
 		try {
 			if (!usuarioController.existeUsuario(usuario)) {
-				JOptionPane.showMessageDialog(this, "El usuario no existe");
+				mostrarError("Inicio de sesión", "El usuario ingresado no existe.");
 				return;
 			}
 
 			var opt = usuarioController.login(usuario, pass);
 			if (opt.isEmpty()) {
-				JOptionPane.showMessageDialog(this, "Contraseña incorrecta");
+				mostrarError("Inicio de sesión", "La contraseña no es correcta.");
 				return;
 			}
 
 			Usuario u = opt.get();
-			JOptionPane.showMessageDialog(this, "Bienvenido/a " + u.getNombre());
+			mostrarInfo("Bienvenida", "Bienvenido/a <b>" + (u.getNombre() != null ? u.getNombre() : usuario) + "</b>.");
 
 			switch (u.getClass().getSimpleName()) {
 			case "Administrador" -> {
@@ -205,18 +203,66 @@ public class LoginFrame extends JFrame {
 				Paciente pac = (Paciente) u;
 				new MenuPacienteFrame(pac).setVisible(true);
 			}
-			// ---------------------------
-			default -> JOptionPane.showMessageDialog(this, "Rol desconocido");
+			default -> {
+				mostrarError("Inicio de sesión", "No se reconoce el rol del usuario.");
+				return;
 			}
-
-			dispose();
-
+			}
+			this.dispose();
 		} catch (Exception ex) {
-			JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+			mostrarError("Error", ex.getMessage());
 		}
 	}
 
-	// Borde de la card de login
+	// Pop-up
+
+	private void mostrarInfo(String titulo, String mensaje) {
+		mostrarDialogoMensaje(titulo, mensaje, COLOR_ACCENT);
+	}
+
+	private void mostrarError(String titulo, String mensaje) {
+		mostrarDialogoMensaje(titulo, mensaje, COLOR_DANGER);
+	}
+
+	private void mostrarDialogoMensaje(String titulo, String mensaje, Color buttonBg) {
+
+		JDialog dlg = new JDialog(this, titulo, true);
+		dlg.setSize(380, 160);
+		dlg.setLocationRelativeTo(this);
+		dlg.setLayout(new BorderLayout());
+		dlg.getContentPane().setBackground(Color.WHITE);
+
+		// Contenido
+		JPanel content = new JPanel(new BorderLayout());
+		content.setBackground(Color.WHITE);
+		content.setBorder(BorderFactory.createEmptyBorder(14, 18, 10, 18));
+
+		JLabel lblMsg = new JLabel("<html>" + mensaje + "</html>");
+		lblMsg.setFont(BODY);
+		content.add(lblMsg, BorderLayout.CENTER);
+
+		dlg.add(content, BorderLayout.CENTER);
+
+		// Boton Aceptar
+		JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
+		footer.setBackground(Color.WHITE);
+
+		RoundedButton btnOk = new RoundedButton("Aceptar");
+		btnOk.setBackground(buttonBg);
+		btnOk.setForeground(Color.WHITE);
+		btnOk.setFont(BUTTON);
+		btnOk.setBorder(BorderFactory.createEmptyBorder(6, 18, 6, 18));
+		btnOk.setFocusPainted(false);
+		btnOk.setCursor(new Cursor(Cursor.HAND_CURSOR));
+		btnOk.addActionListener(e -> dlg.dispose());
+
+		footer.add(btnOk);
+		dlg.add(footer, BorderLayout.SOUTH);
+		dlg.getRootPane().setDefaultButton(btnOk);
+		dlg.setVisible(true);
+	}
+
+	// Card de login
 	private static class LoginCardPanel extends JPanel {
 		private final int radius;
 
@@ -237,7 +283,7 @@ public class LoginFrame extends JFrame {
 			g2.setColor(Color.WHITE);
 			g2.fillRoundRect(0, 0, w - 1, h - 1, radius, radius);
 
-			// Borde gris clarito alrededor
+			// Borde gris clarito
 			g2.setColor(new Color(220, 220, 220));
 			g2.drawRoundRect(0, 0, w - 1, h - 1, radius, radius);
 
