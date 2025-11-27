@@ -10,20 +10,34 @@ import java.util.List;
 public class ControllerAdministrador {
 
     private final Usuario admin;
+    private final Connection conn;
+    private final ControllerHistorial historialManager;
 
     public ControllerAdministrador(Usuario admin) {
         if (admin == null || !"Administrador".equalsIgnoreCase(admin.getRol())) {
             throw new SecurityException("Acceso denegado: solo el usuario Administrador puede gestionar roles y permisos.");
         }
         this.admin = admin;
+
+        // Inicializar conexión
+        try {
+            this.conn = Conexion.getInstance().getConnection();
+        } catch (Exception e) {
+            throw new RuntimeException("No se pudo obtener la conexión a la base de datos.", e);
+        }
+
+        // Inicializar ControllerHistorial con la misma conexión
+        this.historialManager = new ControllerHistorial(this.conn);
     }
 
-    //validaciones auxiliares-------------------------
+    public ControllerHistorial getHistorialManager() {
+        return historialManager;
+    }
 
+    // ====================== VALIDACIONES ======================
     private boolean existeUsuario(String usuario) {
         String sql = "SELECT COUNT(*) FROM usuarios WHERE usuario_login=?";
-        try (Connection c = Conexion.getInstance().getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (PreparedStatement ps = this.conn.prepareStatement(sql)) {
             ps.setString(1, usuario);
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
@@ -36,8 +50,7 @@ public class ControllerAdministrador {
 
     private boolean existeMatricula(String matricula) {
         String sql = "SELECT COUNT(*) FROM medicos WHERE matricula=?";
-        try (Connection c = Conexion.getInstance().getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (PreparedStatement ps = this.conn.prepareStatement(sql)) {
             ps.setString(1, matricula);
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
@@ -54,12 +67,11 @@ public class ControllerAdministrador {
         }
     }
 
-    //registrar paciente -------------------------
+    // ====================== PACIENTES ======================
 
     public void registrarPaciente(String usuario, String nombre, String apellido, String contrasenia,
                                   int nroContrato, String obraSocial) {
 
-        // Validaciones de campos
         validarNoVacio("Usuario", usuario);
         validarNoVacio("Nombre", nombre);
         validarNoVacio("Apellido", apellido);
@@ -72,17 +84,16 @@ public class ControllerAdministrador {
         if (existeUsuario(usuario))
             throw new IllegalArgumentException("El usuario '" + usuario + "' ya existe.");
 
-        String sqlUsuario = "INSERT INTO usuarios(usuario_login, contrasenia, nombre, apellido, rol) " +
-                "VALUES (?, ?, ?, ?, 'Paciente')";
+        String sqlUsuario = "INSERT INTO usuarios(usuario_login, contrasenia, nombre, apellido, rol) VALUES (?, ?, ?, ?, 'Paciente')";
         String sqlPaciente = "INSERT INTO pacientes(id_usuario, nro_contrato, obra_social) VALUES (?, ?, ?)";
 
-        try (Connection c = Conexion.getInstance().getConnection()) {
-            c.setAutoCommit(false);
+        try {
+            conn.setAutoCommit(false);
 
             String passEncriptada = Encriptador.encriptar(contrasenia);
             long idUsuario;
 
-            try (PreparedStatement psUser = c.prepareStatement(sqlUsuario, Statement.RETURN_GENERATED_KEYS)) {
+            try (PreparedStatement psUser = conn.prepareStatement(sqlUsuario, Statement.RETURN_GENERATED_KEYS)) {
                 psUser.setString(1, usuario);
                 psUser.setString(2, passEncriptada);
                 psUser.setString(3, nombre);
@@ -95,21 +106,20 @@ public class ControllerAdministrador {
                 }
             }
 
-            try (PreparedStatement psPac = c.prepareStatement(sqlPaciente)) {
+            try (PreparedStatement psPac = conn.prepareStatement(sqlPaciente)) {
                 psPac.setLong(1, idUsuario);
                 psPac.setInt(2, nroContrato);
                 psPac.setString(3, obraSocial);
                 psPac.executeUpdate();
             }
 
-            c.commit();
-            c.setAutoCommit(true);
+            conn.commit();
+            conn.setAutoCommit(true);
         } catch (SQLException e) {
+            try { conn.rollback(); } catch (SQLException ex) {}
             throw new RuntimeException("Error registrando paciente: " + e.getMessage(), e);
         }
     }
-
-    //modificar paciente -------------------------
 
     public void modificarPaciente(String usuario, String nombre, String apellido, String contrasenia,
                                   int nroContrato, String obraSocial) {
@@ -117,7 +127,6 @@ public class ControllerAdministrador {
         if (!existeUsuario(usuario))
             throw new IllegalArgumentException("El usuario '" + usuario + "' no existe.");
 
-        // Validaciones de campos
         validarNoVacio("Nombre", nombre);
         validarNoVacio("Apellido", apellido);
         validarNoVacio("Contraseña", contrasenia);
@@ -127,12 +136,10 @@ public class ControllerAdministrador {
             throw new IllegalArgumentException("El número de contrato debe ser mayor que cero.");
 
         String sqlUsuario = "UPDATE usuarios SET nombre=?, apellido=?, contrasenia=? WHERE usuario_login=?";
-        String sqlPaciente = "UPDATE pacientes SET nro_contrato=?, obra_social=? " +
-                "WHERE id_usuario=(SELECT id_usuario FROM usuarios WHERE usuario_login=?)";
+        String sqlPaciente = "UPDATE pacientes SET nro_contrato=?, obra_social=? WHERE id_usuario=(SELECT id_usuario FROM usuarios WHERE usuario_login=?)";
 
-        try (Connection c = Conexion.getInstance().getConnection();
-             PreparedStatement psUser = c.prepareStatement(sqlUsuario);
-             PreparedStatement psPac = c.prepareStatement(sqlPaciente)) {
+        try (PreparedStatement psUser = conn.prepareStatement(sqlUsuario);
+             PreparedStatement psPac = conn.prepareStatement(sqlPaciente)) {
 
             String passEncriptada = Encriptador.encriptar(contrasenia);
 
@@ -152,18 +159,13 @@ public class ControllerAdministrador {
         }
     }
 
-
-    //dar baja paciente -------------------------
-
     public void eliminarPaciente(String usuario) {
         if (!existeUsuario(usuario))
             throw new IllegalArgumentException("El paciente '" + usuario + "' no existe.");
-
         eliminarUsuario(usuario);
     }
-    
-    public Paciente obtenerPaciente(String usuarioLogin) {
 
+    public Paciente obtenerPaciente(String usuarioLogin) {
         String sql = """
             SELECT u.nombre, u.apellido, u.usuario_login, u.contrasenia,
                    p.nro_contrato, p.obra_social
@@ -172,56 +174,36 @@ public class ControllerAdministrador {
             WHERE u.usuario_login = ?
         """;
 
-        try (Connection c = Conexion.getInstance().getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, usuarioLogin);
-
             try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
 
-                if (!rs.next()) {
-                    return null; 
-                }
-
-                String nombre = rs.getString("nombre");
-                String apellido = rs.getString("apellido");
-                String usuario = rs.getString("usuario_login");
-                String contrasenia = rs.getString("contrasenia");
-                int nroContrato = rs.getInt("nro_contrato");
-                String obraSocial = rs.getString("obra_social");
-
-                
-                Paciente p = new Paciente(
-                        nombre,
-                        apellido,
-                        usuario,
-                        contrasenia,
-                        nroContrato,
-                        obraSocial,
+                return new Paciente(
+                        rs.getString("nombre"),
+                        rs.getString("apellido"),
+                        rs.getString("usuario_login"),
+                        rs.getString("contrasenia"),
+                        rs.getInt("nro_contrato"),
+                        rs.getString("obra_social"),
                         null
                 );
-
-                return p;
             }
-
         } catch (SQLException e) {
             throw new RuntimeException("Error al obtener datos del paciente.", e);
         }
     }
 
-    
-
-    //registrar medico -------------------------
+    // ====================== MÉDICOS ======================
 
     public void registrarMedico(String usuario, String nombre, String apellido, String contrasenia,
                                 String matricula, String especialidad) {
-        // Validaciones de campos
         validarNoVacio("Usuario", usuario);
         validarNoVacio("Nombre", nombre);
         validarNoVacio("Apellido", apellido);
         validarNoVacio("Contraseña", contrasenia);
-        validarNoVacio("Especialidad", especialidad);
         validarNoVacio("Matrícula", matricula);
+        validarNoVacio("Especialidad", especialidad);
 
         if (!matricula.matches("\\d+"))
             throw new IllegalArgumentException("La matrícula debe contener solo números.");
@@ -235,24 +217,24 @@ public class ControllerAdministrador {
         String sqlUsuario = "INSERT INTO usuarios(usuario_login, contrasenia, nombre, apellido, rol) VALUES (?, ?, ?, ?, 'Medico')";
         String sqlMedico = "INSERT INTO medicos(id_usuario, matricula, especialidad) VALUES (?, ?, ?)";
 
-        try (Connection c = Conexion.getInstance().getConnection();
-             PreparedStatement psUser = c.prepareStatement(sqlUsuario, Statement.RETURN_GENERATED_KEYS)) {
-
+        try {
             String passEncriptada = Encriptador.encriptar(contrasenia);
-
-            psUser.setString(1, usuario);
-            psUser.setString(2, passEncriptada);
-            psUser.setString(3, nombre);
-            psUser.setString(4, apellido);
-            psUser.executeUpdate();
-
             long idUsuario;
-            try (ResultSet keys = psUser.getGeneratedKeys()) {
-                if (keys.next()) idUsuario = keys.getLong(1);
-                else throw new SQLException("No se pudo obtener id_usuario");
+
+            try (PreparedStatement psUser = conn.prepareStatement(sqlUsuario, Statement.RETURN_GENERATED_KEYS)) {
+                psUser.setString(1, usuario);
+                psUser.setString(2, passEncriptada);
+                psUser.setString(3, nombre);
+                psUser.setString(4, apellido);
+                psUser.executeUpdate();
+
+                try (ResultSet keys = psUser.getGeneratedKeys()) {
+                    if (!keys.next()) throw new SQLException("No se pudo obtener id_usuario");
+                    idUsuario = keys.getLong(1);
+                }
             }
 
-            try (PreparedStatement psMed = c.prepareStatement(sqlMedico)) {
+            try (PreparedStatement psMed = conn.prepareStatement(sqlMedico)) {
                 psMed.setLong(1, idUsuario);
                 psMed.setString(2, matricula);
                 psMed.setString(3, especialidad);
@@ -264,143 +246,100 @@ public class ControllerAdministrador {
         }
     }
 
-    //modificar medico -------------------------
+    public void modificarMedico(String usuario, String nombre, String apellido, String contrasenia,
+                                String matricula, String especialidad) {
 
-		    public void modificarMedico(String usuario, String nombre, String apellido, String contrasenia,
-		            String matricula, String especialidad) {
-		
-		// Validaciones básicas
-		if (!existeUsuario(usuario))
-			throw new IllegalArgumentException("El médico '" + usuario + "' no existe.");
-			
-			validarNoVacio("Nombre", nombre);
-			validarNoVacio("Apellido", apellido);
-			validarNoVacio("Contraseña", contrasenia);
-			validarNoVacio("Matrícula", matricula);
-			validarNoVacio("Especialidad", especialidad);
-		
-		if (!matricula.matches("\\d+"))
-			throw new IllegalArgumentException("La matrícula debe contener solo números.");
-		
-		
-			String sqlGetId = "SELECT id_usuario FROM usuarios WHERE usuario_login=?";
-			long idUsuarioMedico;
-		
-		try (Connection c = Conexion.getInstance().getConnection();
-		PreparedStatement ps = c.prepareStatement(sqlGetId)) {
-		
-		ps.setString(1, usuario);
-		
-		try (ResultSet rs = ps.executeQuery()) {
-		if (!rs.next())
-		throw new IllegalArgumentException("No se encontró el médico '" + usuario + "'.");
-		idUsuarioMedico = rs.getLong(1);
-		}
-		} catch (SQLException e) {
-		throw new RuntimeException("Error verificando médico", e);
-		}
-		
-		//Verificar si la matrícula pertenece a OTRO médico
-		String sqlCheckMat = "SELECT id_usuario FROM medicos WHERE matricula=?";
-		
-		try (Connection c = Conexion.getInstance().getConnection();
-		PreparedStatement ps = c.prepareStatement(sqlCheckMat)) {
-		
-		ps.setString(1, matricula);
-		
-		try (ResultSet rs = ps.executeQuery()) {
-		if (rs.next()) {
-		long idMat = rs.getLong(1);
-		
-		if (idMat != idUsuarioMedico) {
-		    // La matrícula pertenece a otro médico
-		    throw new IllegalArgumentException("La matrícula '" + matricula + "' ya está registrada.");
-		}
-		}
-		}
-		} catch (SQLException e) {
-		throw new RuntimeException("Error verificando matrícula", e);
-		}
-		
-		// Actualizar tabla usuarios + medicos
-		String sqlUsuario = "UPDATE usuarios SET nombre=?, apellido=?, contrasenia=? WHERE usuario_login=?";
-		String sqlMedico = "UPDATE medicos SET matricula=?, especialidad=? WHERE id_usuario=?";
-		
-		try (Connection c = Conexion.getInstance().getConnection();
-		PreparedStatement psUser = c.prepareStatement(sqlUsuario);
-		PreparedStatement psMed = c.prepareStatement(sqlMedico)) {
-		
-		String passEncriptada = Encriptador.encriptar(contrasenia);
-		
-		psUser.setString(1, nombre);
-		psUser.setString(2, apellido);
-		psUser.setString(3, passEncriptada);
-		psUser.setString(4, usuario);
-		psUser.executeUpdate();
-		
-		psMed.setString(1, matricula);
-		psMed.setString(2, especialidad);
-		psMed.setLong(3, idUsuarioMedico);
-		psMed.executeUpdate();
-		
-		} catch (SQLException e) {
-		throw new RuntimeException("Error modificando médico", e);
-		}
-}
+        if (!existeUsuario(usuario))
+            throw new IllegalArgumentException("El médico '" + usuario + "' no existe.");
 
-    
-    public bll.Medico obtenerMedico(String usuarioLogin) {
+        validarNoVacio("Nombre", nombre);
+        validarNoVacio("Apellido", apellido);
+        validarNoVacio("Contraseña", contrasenia);
+        validarNoVacio("Matrícula", matricula);
+        validarNoVacio("Especialidad", especialidad);
 
+        if (!matricula.matches("\\d+"))
+            throw new IllegalArgumentException("La matrícula debe contener solo números.");
+
+        long idUsuarioMedico;
+        try (PreparedStatement ps = conn.prepareStatement("SELECT id_usuario FROM usuarios WHERE usuario_login=?")) {
+            ps.setString(1, usuario);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) throw new IllegalArgumentException("No se encontró el médico '" + usuario + "'.");
+                idUsuarioMedico = rs.getLong(1);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error verificando médico", e);
+        }
+
+        // Verificar si la matrícula pertenece a otro médico
+        try (PreparedStatement ps = conn.prepareStatement("SELECT id_usuario FROM medicos WHERE matricula=?")) {
+            ps.setString(1, matricula);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    long idMat = rs.getLong(1);
+                    if (idMat != idUsuarioMedico)
+                        throw new IllegalArgumentException("La matrícula '" + matricula + "' ya está registrada.");
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error verificando matrícula", e);
+        }
+
+        // Actualizar usuario y médico
+        String sqlUsuario = "UPDATE usuarios SET nombre=?, apellido=?, contrasenia=? WHERE usuario_login=?";
+        String sqlMedico = "UPDATE medicos SET matricula=?, especialidad=? WHERE id_usuario=?";
+
+        try (PreparedStatement psUser = conn.prepareStatement(sqlUsuario);
+             PreparedStatement psMed = conn.prepareStatement(sqlMedico)) {
+
+            String passEncriptada = Encriptador.encriptar(contrasenia);
+
+            psUser.setString(1, nombre);
+            psUser.setString(2, apellido);
+            psUser.setString(3, passEncriptada);
+            psUser.setString(4, usuario);
+            psUser.executeUpdate();
+
+            psMed.setString(1, matricula);
+            psMed.setString(2, especialidad);
+            psMed.setLong(3, idUsuarioMedico);
+            psMed.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Error modificando médico", e);
+        }
+    }
+
+    public Medico obtenerMedico(String usuarioLogin) {
         String sql = """
-            SELECT  u.nombre,
-                    u.apellido,
-                    u.usuario_login,
-                    u.contrasenia,
-                    m.matricula,
-                    m.especialidad
+            SELECT  u.nombre, u.apellido, u.usuario_login, u.contrasenia,
+                    m.matricula, m.especialidad
             FROM usuarios u
             JOIN medicos m ON u.id_usuario = m.id_usuario
             WHERE u.usuario_login = ?
         """;
 
-        try (Connection c = Conexion.getInstance().getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, usuarioLogin);
-
             try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
 
-                if (!rs.next()) {
-                    return null; 
-                }
-
-                String nombre = rs.getString("nombre");
-                String apellido = rs.getString("apellido");
-                String usuario = rs.getString("usuario_login");
-                String contrasenia = rs.getString("contrasenia");
-                String matricula = rs.getString("matricula");
-                String especialidad = rs.getString("especialidad");
-
-                // Crear el médico SIN historial ni turnos
-                bll.Medico m = new bll.Medico(
-                        nombre,
-                        apellido,
-                        usuario,
-                        contrasenia,
-                        matricula,
-                        especialidad
+                return new Medico(
+                        rs.getString("nombre"),
+                        rs.getString("apellido"),
+                        rs.getString("usuario_login"),
+                        rs.getString("contrasenia"),
+                        rs.getString("matricula"),
+                        rs.getString("especialidad")
                 );
-
-                return m;
             }
-
         } catch (SQLException e) {
             throw new RuntimeException("Error al obtener datos del médico.", e);
         }
     }
 
     public Medico obtenerMedicoPorMatricula(String matricula) {
-
         if (matricula == null || matricula.trim().isEmpty())
             throw new IllegalArgumentException("Debe ingresar una matrícula.");
 
@@ -410,27 +349,22 @@ public class ControllerAdministrador {
             FROM medicos m
             JOIN usuarios u ON m.id_usuario = u.id_usuario
             WHERE m.matricula = ?
-            """;
+        """;
 
-        try (Connection c = Conexion.getInstance().getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, matricula);
-
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-
                     return new Medico(
-                            rs.getString("usuario_login"),
                             rs.getString("nombre"),
                             rs.getString("apellido"),
+                            rs.getString("usuario_login"),
                             rs.getString("contrasenia"),
                             rs.getString("matricula"),
                             rs.getString("especialidad")
                     );
                 }
             }
-
         } catch (SQLException e) {
             throw new RuntimeException("Error buscando médico por matrícula", e);
         }
@@ -438,43 +372,30 @@ public class ControllerAdministrador {
         return null;
     }
 
-
-    //dar baja medico -------------------------
-
     public void eliminarMedico(String usuario) {
         if (!existeUsuario(usuario))
             throw new IllegalArgumentException("El médico '" + usuario + "' no existe.");
-
         eliminarUsuario(usuario);
     }
 
-  //eliminar usuario (cualquier usr) -------------------------
+    // ====================== USUARIOS ======================
 
     public void eliminarUsuario(String usuario) {
         String sql = "DELETE FROM usuarios WHERE usuario_login=?";
-        try (Connection c = Conexion.getInstance().getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, usuario);
             int filasAfectadas = ps.executeUpdate();
-
-            if (filasAfectadas == 0) {
+            if (filasAfectadas == 0)
                 throw new IllegalArgumentException("No se encontró ningún usuario con el nombre '" + usuario + "'.");
-            }
-
         } catch (SQLException e) {
             throw new RuntimeException("Error eliminando usuario", e);
         }
     }
 
-
-    //listar usuarios -------------------------
-
     public List<String> listarUsuariosPorRol(String rol) {
         String sql = "SELECT usuario_login, nombre, apellido FROM usuarios WHERE rol=?";
         List<String> list = new ArrayList<>();
-        try (Connection c = Conexion.getInstance().getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, rol);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -490,94 +411,120 @@ public class ControllerAdministrador {
         }
         return list;
     }
-    
-  //resetear pass -------------------------
-    public void resetearContrasenia(String usuario, String nuevaContrasenia) {
 
-    	
-        // Validaciones de campos
+    public void resetearContrasenia(String usuario, String nuevaContrasenia) {
         validarNoVacio("Usuario", usuario);
         validarNoVacio("Nueva contraseña", nuevaContrasenia);
 
-        if (!existeUsuario(usuario)) {
+        if (!existeUsuario(usuario))
             throw new IllegalArgumentException("El usuario '" + usuario + "' no existe.");
-        }
 
         String sql = "UPDATE usuarios SET contrasenia=? WHERE usuario_login=?";
 
-        try (Connection c = Conexion.getInstance().getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             String passEncriptada = Encriptador.encriptar(nuevaContrasenia);
-
             ps.setString(1, passEncriptada);
             ps.setString(2, usuario);
 
             int filas = ps.executeUpdate();
-
-            if (filas == 0) {
-                throw new RuntimeException("No se pudo resetear la contraseña. Intente nuevamente.");
-            }
+            if (filas == 0) throw new RuntimeException("No se pudo resetear la contraseña. Intente nuevamente.");
 
         } catch (SQLException e) {
             throw new RuntimeException("Error al resetear contraseña: " + e.getMessage(), e);
         }
     }
 
-    
-  //bloquear usr -------------------------
     public void bloquearUsuario(String usuario) {
-
-    	
-        // Validaciones de campos
         validarNoVacio("Usuario", usuario);
-
-        if (!existeUsuario(usuario)) {
-            throw new IllegalArgumentException("El usuario '" + usuario + "' no existe.");
-        }
+        if (!existeUsuario(usuario)) throw new IllegalArgumentException("El usuario '" + usuario + "' no existe.");
 
         String sql = "UPDATE usuarios SET bloqueado = 1 WHERE usuario_login=? AND bloqueado = 0";
 
-        try (Connection c = Conexion.getInstance().getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, usuario);
             int rows = ps.executeUpdate();
-
-            if (rows == 0) {
-                throw new IllegalStateException("El usuario ya está bloqueado o no se pudo bloquear.");
-            }
-
+            if (rows == 0) throw new IllegalStateException("El usuario ya está bloqueado o no se pudo bloquear.");
         } catch (SQLException e) {
             throw new RuntimeException("Error al bloquear usuario", e);
         }
     }
 
-    //desbloquear usr -------------------------
     public void desbloquearUsuario(String usuario) {
-
-        // Validaciones de campos
         validarNoVacio("Usuario", usuario);
-
-        if (!existeUsuario(usuario)) {
-            throw new IllegalArgumentException("El usuario '" + usuario + "' no existe.");
-        }
+        if (!existeUsuario(usuario)) throw new IllegalArgumentException("El usuario '" + usuario + "' no existe.");
 
         String sql = "UPDATE usuarios SET bloqueado = 0 WHERE usuario_login=? AND bloqueado = 1";
 
-        try (Connection c = Conexion.getInstance().getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, usuario);
             int rows = ps.executeUpdate();
-
-            if (rows == 0) {
-                throw new IllegalStateException("El usuario no está bloqueado o no se pudo desbloquear.");
-            }
-
+            if (rows == 0) throw new IllegalStateException("El usuario no está bloqueado o no se pudo desbloquear.");
         } catch (SQLException e) {
             throw new RuntimeException("Error al desbloquear usuario", e);
         }
+    }
+    
+ // Lista todos los pacientes como objetos Paciente
+    public List<Paciente> listarPacientes() {
+        String sql = """
+            SELECT u.nombre, u.apellido, u.usuario_login, u.contrasenia,
+                   p.nro_contrato, p.obra_social
+            FROM usuarios u
+            JOIN pacientes p ON u.id_usuario = p.id_usuario
+        """;
+
+        List<Paciente> lista = new ArrayList<>();
+        try (PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                Paciente p = new Paciente(
+                        rs.getString("nombre"),
+                        rs.getString("apellido"),
+                        rs.getString("usuario_login"),
+                        rs.getString("contrasenia"),
+                        rs.getInt("nro_contrato"),
+                        rs.getString("obra_social"),
+                        null
+                );
+                lista.add(p);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Error listando pacientes", e);
+        }
+        return lista;
+    }
+
+    // Lista todos los médicos como objetos Medico
+    public List<Medico> listarMedicos() {
+        String sql = """
+            SELECT u.nombre, u.apellido, u.usuario_login, u.contrasenia,
+                   m.matricula, m.especialidad
+            FROM usuarios u
+            JOIN medicos m ON u.id_usuario = m.id_usuario
+        """;
+
+        List<Medico> lista = new ArrayList<>();
+        try (PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                Medico m = new Medico(
+                        rs.getString("nombre"),
+                        rs.getString("apellido"),
+                        rs.getString("usuario_login"),
+                        rs.getString("contrasenia"),
+                        rs.getString("matricula"),
+                        rs.getString("especialidad")
+                );
+                lista.add(m);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Error listando médicos", e);
+        }
+        return lista;
     }
 
 }

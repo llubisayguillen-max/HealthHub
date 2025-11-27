@@ -3,6 +3,7 @@ package gui;
 import javax.swing.*;
 import java.awt.*;
 import bll.Administrador;
+import bll.Paciente;
 import dll.ControllerAdministrador;
 import static gui.UiPaleta.*;
 
@@ -128,9 +129,73 @@ public class MenuAdministradorFrame extends JFrame {
 
         );
 
+     // CARD HISTORIAL MÉDICO
+        JPanel cardHistorial = crearCardConBotones(
+                "Historial Médico",
+                "/gui/img/historial.png",
+                new String[]{"Crear Registro", "Ver Historial"},
+                new Runnable[]{
+
+                        // Acción Crear Registro
+                        () -> {
+                            var pacientes = controller.listarPacientes();
+                            var medicos = controller.listarMedicos();
+                            var historialManager = controller.getHistorialManager();
+
+                            new CrearRegistroHistorialFrame(pacientes, medicos, historialManager).setVisible(true);
+                        },
+
+                        // Acción Ver Historial
+                        () -> {
+                            var pacientes = controller.listarPacientes();
+                            var historialManager = controller.getHistorialManager();
+
+                            if (pacientes.isEmpty()) {
+                                JOptionPane.showMessageDialog(this, "No hay pacientes registrados.");
+                                return;
+                            }
+
+                            // Crear array de nombres de pacientes
+                            String[] nombres = pacientes.stream()
+                                                        .map(Paciente::getNombre)
+                                                        .toArray(String[]::new);
+
+                            // Seleccionar paciente
+                            String seleccionado = (String) JOptionPane.showInputDialog(
+                                    this,
+                                    "Seleccione un paciente:",
+                                    "Ver Historial",
+                                    JOptionPane.QUESTION_MESSAGE,
+                                    null,
+                                    nombres,
+                                    nombres[0]
+                            );
+
+                            if (seleccionado != null) {
+                                // Buscar el paciente correspondiente
+                                Paciente paciente = pacientes.stream()
+                                                             .filter(p -> p.getNombre().equals(seleccionado))
+                                                             .findFirst()
+                                                             .orElse(null);
+
+                                if (paciente != null) {
+                                    // Abrir frame de historial del paciente
+                                    new VerHistorialPacienteFrame(paciente, historialManager).setVisible(true);
+                                } else {
+                                    JOptionPane.showMessageDialog(this, "Paciente no encontrado.");
+                                }
+                            }
+                        }
+                }
+        );
+
+
+
         center.add(cardPacientes);
         center.add(cardMedicos);
         center.add(cardUsuarios);
+        center.add(cardHistorial);
+
 
         wrapperCenter.add(center, BorderLayout.CENTER);
         add(wrapperCenter, BorderLayout.CENTER);
