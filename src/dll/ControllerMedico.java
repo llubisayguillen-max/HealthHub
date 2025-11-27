@@ -5,9 +5,7 @@ import bll.Medico;
 
 import java.sql.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -197,7 +195,8 @@ public class ControllerMedico {
 		}
 	}
 
-	// visualiza la agenda fecha y hora
+	// visualiza la agenda fecha, hora y datos del paciente
+
 	public List<String> visualizarAgenda(java.sql.Date desde, java.sql.Date hasta, boolean incluirCancelados) {
 		if (desde == null || hasta == null)
 			throw new IllegalArgumentException("Ingrese fecha");
@@ -205,33 +204,174 @@ public class ControllerMedico {
 			throw new IllegalArgumentException("Rango de fechas inválido");
 
 		final String sql = """
-				    SELECT t.fecha, t.hora, t.estado
-				    FROM turnos t
-				    JOIN medicos m ON m.id = t.id_medico
-				    JOIN usuarios u ON u.id_usuario = m.id_usuario
-				    WHERE u.usuario_login=? 
-				    AND t.fecha BETWEEN ? AND ?
-				    AND ( ? OR t.estado <> 'Cancelado' )
-				    ORDER BY t.fecha, t.hora
+				SELECT  t.id,
+				        t.fecha,
+				        t.hora,
+				        t.estado,
+				        p.id                AS id_paciente,
+				        uPac.usuario_login  AS usuario_paciente,
+				        uPac.nombre         AS nombre_paciente,
+				        uPac.apellido       AS apellido_paciente
+				FROM turnos t
+				JOIN medicos m    ON m.id = t.id_medico
+				JOIN usuarios uM  ON uM.id_usuario = m.id_usuario
+				JOIN pacientes p  ON p.id = t.id_paciente
+				JOIN usuarios uPac ON uPac.id_usuario = p.id_usuario
+				WHERE uM.usuario_login = ?
+				  AND t.fecha BETWEEN ? AND ?
+				  AND ( ? OR t.estado <> 'Cancelado' )
+				ORDER BY t.fecha, t.hora
 				""";
 
 		List<String> agenda = new ArrayList<>();
-		try (Connection c = Conexion.getInstance().getConnection(); 
-				PreparedStatement ps = c.prepareStatement(sql)) {
+
+		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+
 			ps.setString(1, medico.getUsuario());
 			ps.setDate(2, desde);
 			ps.setDate(3, hasta);
-			 ps.setBoolean(4, incluirCancelados);
+			ps.setBoolean(4, incluirCancelados);
+
 			try (ResultSet rs = ps.executeQuery()) {
 				while (rs.next()) {
 					var f = rs.getDate("fecha").toLocalDate();
-	                var h = rs.getTime("hora").toLocalTime();
-	                var estado = rs.getString("estado");
-	                agenda.add(f + " " + h + " | estado: " + estado);
+					var h = rs.getTime("hora").toLocalTime();
+					var estado = rs.getString("estado");
+
+					long idTurno = rs.getLong("id");
+					long idPaciente = rs.getLong("id_paciente");
+					String userPac = rs.getString("usuario_paciente");
+					String nombrePac = rs.getString("nombre_paciente");
+					String apellidoPac = rs.getString("apellido_paciente");
+
+					String linea = String.format(
+							"%s %s | Paciente: %s, %s (%s) | idTurno: %d | idPaciente: %d | estado: %s", f, h,
+							apellidoPac != null ? apellidoPac : "", nombrePac != null ? nombrePac : "",
+							userPac != null ? userPac : "", idTurno, idPaciente, estado);
+
+					agenda.add(linea);
 				}
 			}
 		} catch (SQLException e) {
 			throw new RuntimeException("Error visualizando agenda", e);
+		}
+
+		return agenda;
+	}
+
+	public List<Object[]> visualizarAgendaUI(java.sql.Date desde, java.sql.Date hasta, boolean incluirCancelados) {
+		if (desde == null || hasta == null)
+			throw new IllegalArgumentException("Ingrese fecha");
+		if (hasta.before(desde))
+			throw new IllegalArgumentException("Rango de fechas inválido");
+
+		final String sql = """
+				SELECT t.id,
+				t.fecha,
+				t.hora,
+				t.estado,
+				up.nombre        AS nombrePaciente,
+				up.apellido      AS apellidoPaciente,
+				up.usuario_login AS usuarioPaciente
+				FROM turnos t
+				JOIN medicos  m  ON m.id = t.id_medico
+				JOIN usuarios u  ON u.id_usuario = m.id_usuario      -- médico
+				JOIN pacientes p ON p.id = t.id_paciente
+				JOIN usuarios up ON up.id_usuario = p.id_usuario     -- paciente
+				WHERE u.usuario_login = ?
+				AND t.fecha BETWEEN ? AND ?
+				AND ( ? OR t.estado <> 'Cancelado' )
+				ORDER BY t.fecha, t.hora
+				""";
+
+		List<Object[]> lista = new ArrayList<>();
+
+		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+
+			ps.setString(1, medico.getUsuario());
+			ps.setDate(2, desde);
+			ps.setDate(3, hasta);
+			ps.setBoolean(4, incluirCancelados);
+
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					long idTurno = rs.getLong("id");
+					LocalDate f = rs.getDate("fecha").toLocalDate();
+					LocalTime h = rs.getTime("hora").toLocalTime();
+					String estado = rs.getString("estado");
+					String nombre = rs.getString("nombrePaciente");
+					String apellido = rs.getString("apellidoPaciente");
+					String usuario = rs.getString("usuarioPaciente");
+
+					String pac = apellido + ", " + nombre;
+
+					lista.add(new Object[] { idTurno, f, h, pac, estado });
+				}
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException("Error visualizando agenda (UI)", e);
+		}
+
+		return lista;
+	}
+
+	public static record AgendaItem(long idTurno, long idPaciente, LocalDate fecha, LocalTime hora,
+			String pacienteNombre, String usuarioPaciente, String estado) {
+	}
+
+	public List<AgendaItem> visualizarAgendaDetallada(java.sql.Date desde, java.sql.Date hasta,
+			boolean incluirCancelados) {
+		if (desde == null || hasta == null)
+			throw new IllegalArgumentException("Ingrese fecha");
+		if (hasta.before(desde))
+			throw new IllegalArgumentException("Rango de fechas inválido");
+
+		final String sql = """
+				SELECT  t.id,
+				        t.fecha,
+				        t.hora,
+				        t.estado,
+				        p.id              AS id_paciente,
+				        uPac.apellido     AS ape_pac,
+				        uPac.nombre       AS nom_pac,
+				        uPac.usuario_login AS user_pac
+				FROM turnos t
+				JOIN medicos m   ON m.id = t.id_medico
+				JOIN usuarios uM ON uM.id_usuario = m.id_usuario
+				JOIN pacientes p ON p.id = t.id_paciente
+				JOIN usuarios uPac ON uPac.id_usuario = p.id_usuario
+				WHERE uM.usuario_login = ?
+				  AND t.fecha BETWEEN ? AND ?
+				  AND ( ? OR t.estado <> 'Cancelado' )
+				ORDER BY t.fecha, t.hora
+				""";
+
+		List<AgendaItem> agenda = new ArrayList<>();
+		try (Connection c = Conexion.getInstance().getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+
+			ps.setString(1, medico.getUsuario());
+			ps.setDate(2, desde);
+			ps.setDate(3, hasta);
+			ps.setBoolean(4, incluirCancelados);
+
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					long idTurno = rs.getLong("id");
+					long idPaciente = rs.getLong("id_paciente");
+					LocalDate fecha = rs.getDate("fecha").toLocalDate();
+					LocalTime hora = rs.getTime("hora").toLocalTime();
+					String ape = rs.getString("ape_pac");
+					String nom = rs.getString("nom_pac");
+					String userPac = rs.getString("user_pac");
+					String estado = rs.getString("estado");
+
+					String nombrePac = (ape != null ? ape : "") + (nom != null ? ", " + nom : "");
+
+					agenda.add(new AgendaItem(idTurno, idPaciente, fecha, hora, nombrePac.trim(), userPac, estado));
+				}
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException("Error visualizando agenda detallada", e);
 		}
 		return agenda;
 	}
@@ -321,7 +461,7 @@ public class ControllerMedico {
 			ps.setString(2, medico.getUsuario());
 			try (ResultSet rs = ps.executeQuery()) {
 				if (rs.next()) {
-					idMedico = rs.getLong(1);					
+					idMedico = rs.getLong(1);
 				}
 			}
 		} catch (SQLException e) {

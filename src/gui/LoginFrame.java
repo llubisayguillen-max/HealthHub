@@ -9,6 +9,7 @@ import dll.ControllerUsuario;
 import dll.ControllerAdministrador;
 import bll.Usuario;
 import bll.Administrador;
+import bll.Paciente;
 import bll.Medico;
 
 import static gui.UiPaleta.*;
@@ -200,6 +201,11 @@ public class LoginFrame extends JFrame {
 				Medico med = (Medico) u;
 				new MenuMedicoFrame(med).setVisible(true);
 			}
+			case "Paciente" -> {
+				Paciente pac = (Paciente) u;
+				new MenuPacienteFrame(pac).setVisible(true);
+			}
+			// ---------------------------
 			default -> JOptionPane.showMessageDialog(this, "Rol desconocido");
 			}
 

@@ -1,12 +1,13 @@
 package bll;
 
 import dll.ControllerPaciente;
+import dll.ControllerPaciente.TurnoDisponible;
 
 import javax.swing.*;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 public class Paciente extends Usuario implements Menu {
@@ -26,6 +27,8 @@ public class Paciente extends Usuario implements Menu {
 		this.controller = new ControllerPaciente(this);
 		this.turnos = new ArrayList<>();
 	}
+
+	// --- Getters y Setters ---
 
 	public int getNroContrato() {
 		return nroContrato;
@@ -67,8 +70,6 @@ public class Paciente extends Usuario implements Menu {
 		this.turnos.add(turno);
 	}
 
-	// Menú
-
 	@Override
 	public void MostrarMenu() {
 		String[] opciones = { "Reservar turno", "Cancelar turno", "Consultar turno", "Ver historial médico",
@@ -87,153 +88,144 @@ public class Paciente extends Usuario implements Menu {
 			case 5 -> agregarFavoritoMenu();
 			case 6 -> recibirRecomendacionesMenu();
 			case 7 -> JOptionPane.showMessageDialog(null, "Saliendo...");
-			default -> JOptionPane.showMessageDialog(null, "Opción inválida.");
+			default -> {
+				if (elegido != -1)
+					JOptionPane.showMessageDialog(null, "Opción inválida.");
+				else
+					elegido = 7; // Si cierra la ventana, salir
+			}
 			}
 		} while (elegido != 7);
 	}
 
-	// Funciones
-
 	private void reservarTurnoMenu() {
 		try {
-			String especialidad = JOptionPane.showInputDialog("Ingrese la especialidad deseada:");
-			if (especialidad == null || especialidad.isBlank())
-				return;
-
-			List<Medico> medicos = controller.filtrarPorEspecialidad(especialidad);
-			if (medicos.isEmpty()) {
-				JOptionPane.showMessageDialog(null, "No se encontraron médicos para esa especialidad.");
+			// Obtener Especialidades
+			String[] especialidades = controller.obtenerEspecialidades();
+			if (especialidades.length == 0) {
+				JOptionPane.showMessageDialog(null, "No hay especialidades disponibles.");
 				return;
 			}
 
-			StringBuilder sb = new StringBuilder("Médicos disponibles:\n");
-			for (int i = 0; i < medicos.size(); i++)
-				sb.append(i + 1).append(". ").append(medicos.get(i).getNombreCompleto()).append(" - ")
-						.append(medicos.get(i).getEspecialidad()).append("\n");
+			// Seleccionar Especialidad
+			String especialidad = (String) JOptionPane.showInputDialog(null, "Seleccione la especialidad:",
+					"Reservar Turno", JOptionPane.QUESTION_MESSAGE, null, especialidades, especialidades[0]);
 
-			int selMedico;
+			if (especialidad == null)
+				return;
+
+			// Ingresar Fecha
+			String fechaStr = JOptionPane.showInputDialog("Ingrese fecha (dd/MM/yyyy):");
+			if (fechaStr == null || fechaStr.isBlank())
+				return;
+
+			LocalDate fecha;
 			try {
-				selMedico = Integer.parseInt(JOptionPane.showInputDialog(sb + "Ingrese el número del médico:")) - 1;
-			} catch (NumberFormatException e) {
-				JOptionPane.showMessageDialog(null, "Debes ingresar un número válido.");
+				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+				fecha = LocalDate.parse(fechaStr, formatter);
+			} catch (DateTimeParseException e) {
+				JOptionPane.showMessageDialog(null, "Formato de fecha inválido. Use dd/MM/yyyy.");
 				return;
 			}
-			if (selMedico < 0 || selMedico >= medicos.size()) {
+
+			// Buscar Turnos Disponibles
+			List<TurnoDisponible> disponibles;
+			try {
+				disponibles = controller.buscarTurnos(especialidad, fecha, fecha);
+			} catch (Exception e) {
+				JOptionPane.showMessageDialog(null, e.getMessage());
+				return;
+			}
+
+			// Mostrar lista y seleccionar
+			StringBuilder sb = new StringBuilder("Horarios disponibles:\n");
+			for (int i = 0; i < disponibles.size(); i++) {
+				TurnoDisponible td = disponibles.get(i);
+				sb.append(i + 1).append(". ").append(td.medicoNombre()).append(" - ").append(td.horaInicio())
+						.append("\n");
+			}
+
+			String seleccionStr = JOptionPane.showInputDialog(sb.toString() + "Ingrese el número del horario:");
+			if (seleccionStr == null)
+				return;
+
+			int index = Integer.parseInt(seleccionStr) - 1;
+			if (index < 0 || index >= disponibles.size()) {
 				JOptionPane.showMessageDialog(null, "Selección inválida.");
 				return;
 			}
 
-			Medico m = medicos.get(selMedico);
-			List<String> horarios = controller.obtenerHorariosDisponibles(m.getUsuario());
-			if (horarios.isEmpty()) {
-				JOptionPane.showMessageDialog(null, "No hay horarios disponibles para este médico.");
-				return;
-			}
+			// Reservar usando ID de Disponibilidad
+			long idDisponibilidad = disponibles.get(index).idDisponibilidad();
+			long idTurno = controller.solicitarTurno(idDisponibilidad);
 
-			StringBuilder sbHorarios = new StringBuilder("Horarios disponibles:\n");
-			for (int i = 0; i < horarios.size(); i++)
-				sbHorarios.append(i + 1).append(". ").append(horarios.get(i)).append("\n");
-
-			int selHorario;
-			try {
-				selHorario = Integer
-						.parseInt(JOptionPane.showInputDialog(sbHorarios + "Ingrese el número del horario:")) - 1;
-			} catch (NumberFormatException e) {
-				JOptionPane.showMessageDialog(null, "Debes ingresar un número válido.");
-				return;
-			}
-			if (selHorario < 0 || selHorario >= horarios.size()) {
-				JOptionPane.showMessageDialog(null, "Selección inválida.");
-				return;
-			}
-
-			// para armar la fecha y hora reales
-			String horarioSeleccionado = horarios.get(selHorario); // ej: "08:00:00 - 09:00:00"
-			String horaInicio;
-			try {
-				horaInicio = horarioSeleccionado.split(" - ")[0];
-			} catch (Exception ex) {
-				JOptionPane.showMessageDialog(null, "Formato de horario inválido.");
-				return;
-			}
-
-			String fechaHoy = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-			Date fechaHora;
-			try {
-				fechaHora = sdf.parse(fechaHoy + " " + horaInicio);
-			} catch (ParseException ex) {
-				JOptionPane.showMessageDialog(null, "Error al parsear la fecha y hora.");
-				return;
-			}
-
-			long idTurno = controller.solicitarTurno(m, fechaHora);
 			JOptionPane.showMessageDialog(null, "Turno reservado con éxito. ID: " + idTurno);
 
-		} catch (IllegalStateException e) {
+		} catch (NumberFormatException e) {
+			JOptionPane.showMessageDialog(null, "Debe ingresar un número válido.");
+		} catch (Exception e) {
 			JOptionPane.showMessageDialog(null, "Error: " + e.getMessage());
 		}
 	}
 
 	private void cancelarTurnoMenu() {
-		List<Turno> turnos = controller.turnosActivos();
-		if (turnos.isEmpty()) {
-			JOptionPane.showMessageDialog(null, "No tiene turnos activos.");
-			return;
-		}
-
-		StringBuilder sb = new StringBuilder("Turnos activos:\n");
-		for (int i = 0; i < turnos.size(); i++)
-			sb.append(i + 1).append(". ").append(turnos.get(i).getMedico().getNombreCompleto()).append(" - ")
-					.append(turnos.get(i).getFechaHora()).append(" - ").append(turnos.get(i).getEstado()).append("\n");
-
-		int selTurno;
 		try {
-			selTurno = Integer.parseInt(JOptionPane.showInputDialog(sb + "Ingrese el número del turno a cancelar:"))
-					- 1;
+			List<Turno> turnos = controller.turnosActivos();
+
+			// Construir menú de selección
+			StringBuilder sb = new StringBuilder("Turnos activos:\n");
+			for (int i = 0; i < turnos.size(); i++) {
+				Turno t = turnos.get(i);
+				String medico = (t.getMedico() != null) ? t.getMedico().getNombreCompleto() : "Sin médico";
+				sb.append(i + 1).append(". ").append(medico).append(" - ").append(t.getFechaHora()).append(" - ")
+						.append(t.getEstado()).append("\n");
+			}
+
+			String input = JOptionPane.showInputDialog(sb + "Ingrese el número del turno a cancelar:");
+			if (input == null)
+				return;
+
+			int selTurno = Integer.parseInt(input) - 1;
+
+			if (selTurno < 0 || selTurno >= turnos.size()) {
+				JOptionPane.showMessageDialog(null, "Selección inválida.");
+				return;
+			}
+
+			Turno t = turnos.get(selTurno);
+
+			controller.cancelarTurno(t.getIdTurno());
+
+			t.cancelar();
+			JOptionPane.showMessageDialog(null, "Turno cancelado con éxito.");
+
+		} catch (IllegalStateException e) {
+			JOptionPane.showMessageDialog(null, e.getMessage());
 		} catch (NumberFormatException e) {
 			JOptionPane.showMessageDialog(null, "Debes ingresar un número válido.");
-			return;
-		}
-
-		if (selTurno < 0 || selTurno >= turnos.size()) {
-			JOptionPane.showMessageDialog(null, "Selección inválida.");
-			return;
-		}
-
-		Turno t = turnos.get(selTurno);
-		try {
-			controller.cancelarTurno(t.getIdTurno()); // usar ID real
-			t.cancelar(); // actualizar estado local
-			JOptionPane.showMessageDialog(null, "Turno cancelado con éxito.");
-		} catch (IllegalStateException | IllegalArgumentException e) {
+		} catch (Exception e) {
 			JOptionPane.showMessageDialog(null, "Error cancelando turno: " + e.getMessage());
 		}
 	}
 
 	private void consultarTurnoMenu() {
-		List<Turno> turnos;
 		try {
-			turnos = controller.turnosActivos();
+			List<Turno> turnos = controller.turnosActivos();
+
+			StringBuilder sb = new StringBuilder("Turnos activos:\n");
+			for (int i = 0; i < turnos.size(); i++) {
+				Turno t = turnos.get(i);
+				String medico = (t.getMedico() != null) ? t.getMedico().getNombreCompleto() : "N/D";
+				sb.append(i + 1).append(". Médico: ").append(medico).append(" - Fecha: ").append(t.getFechaHora())
+						.append(" - Estado: ").append(t.getEstado()).append("\n");
+			}
+			JOptionPane.showMessageDialog(null, sb.toString());
+
 		} catch (IllegalStateException e) {
 			JOptionPane.showMessageDialog(null, e.getMessage());
-			return;
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(null, "Error: " + e.getMessage());
 		}
-
-		if (turnos.isEmpty()) {
-			JOptionPane.showMessageDialog(null, "No tiene turnos activos.");
-			return;
-		}
-
-		StringBuilder sb = new StringBuilder("Turnos activos:\n");
-		for (int i = 0; i < turnos.size(); i++) {
-			Turno t = turnos.get(i);
-			sb.append(i + 1).append(". Médico: ")
-					.append(t.getMedico() != null ? t.getMedico().getNombreCompleto() : "N/D").append(" - Fecha: ")
-					.append(t.getFechaHora()).append(" - Estado: ").append(t.getEstado()).append("\n");
-		}
-
-		JOptionPane.showMessageDialog(null, sb.toString());
 	}
 
 	private void agregarFavoritoMenu() {
@@ -244,25 +236,26 @@ public class Paciente extends Usuario implements Menu {
 		try {
 			controller.agregarAFavoritos(usernameMedico);
 			JOptionPane.showMessageDialog(null, "Médico agregado a favoritos correctamente.");
-		} catch (IllegalArgumentException | IllegalStateException e) {
+		} catch (Exception e) {
 			JOptionPane.showMessageDialog(null, "Error agregando favorito: " + e.getMessage());
 		}
 	}
 
 	private void verFavoritos() {
-		List<Medico> favoritos;
 		try {
-			favoritos = controller.verFavoritos();
+			List<Medico> favoritos = controller.verFavoritos();
+
+			StringBuilder sb = new StringBuilder("Médicos favoritos:\n");
+			for (Medico m : favoritos)
+				sb.append(m.getNombreCompleto()).append(" - ").append(m.getEspecialidad()).append("\n");
+
+			JOptionPane.showMessageDialog(null, sb.toString());
+
 		} catch (IllegalStateException e) {
 			JOptionPane.showMessageDialog(null, e.getMessage());
-			return;
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(null, "Error: " + e.getMessage());
 		}
-
-		StringBuilder sb = new StringBuilder("Médicos favoritos:\n");
-		for (Medico m : favoritos)
-			sb.append(m.getNombreCompleto()).append(" - ").append(m.getEspecialidad()).append("\n");
-
-		JOptionPane.showMessageDialog(null, sb.toString());
 	}
 
 	private void verResultado() {
@@ -275,11 +268,14 @@ public class Paciente extends Usuario implements Menu {
 	}
 
 	private void recibirRecomendacionesMenu() {
-		List<String> recs = controller.mostrarRecomendaciones();
-		StringBuilder sb = new StringBuilder("Recomendaciones:\n");
-		for (String r : recs)
-			sb.append("- ").append(r).append("\n");
-		JOptionPane.showMessageDialog(null, sb.toString());
+		try {
+			List<String> recs = controller.mostrarRecomendaciones();
+			StringBuilder sb = new StringBuilder("Recomendaciones:\n");
+			for (String r : recs)
+				sb.append("- ").append(r).append("\n");
+			JOptionPane.showMessageDialog(null, sb.toString());
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(null, "Error al obtener recomendaciones: " + e.getMessage());
+		}
 	}
-
 }
