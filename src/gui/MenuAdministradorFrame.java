@@ -155,12 +155,12 @@ public class MenuAdministradorFrame extends JFrame {
                                 return;
                             }
 
-                            // Crear array de nombres de pacientes
+
                             String[] nombres = pacientes.stream()
                                                         .map(Paciente::getNombre)
                                                         .toArray(String[]::new);
 
-                            // Seleccionar paciente
+
                             String seleccionado = (String) JOptionPane.showInputDialog(
                                     this,
                                     "Seleccione un paciente:",
@@ -172,7 +172,7 @@ public class MenuAdministradorFrame extends JFrame {
                             );
 
                             if (seleccionado != null) {
-                                // Buscar el paciente correspondiente
+
                                 Paciente paciente = pacientes.stream()
                                                              .filter(p -> p.getNombre().equals(seleccionado))
                                                              .findFirst()

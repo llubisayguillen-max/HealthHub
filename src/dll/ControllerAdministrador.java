@@ -26,7 +26,7 @@ public class ControllerAdministrador {
             throw new RuntimeException("No se pudo obtener la conexión a la base de datos.", e);
         }
 
-        // Inicializar ControllerHistorial con la misma conexión
+
         this.historialManager = new ControllerHistorial(this.conn);
     }
 
@@ -34,7 +34,7 @@ public class ControllerAdministrador {
         return historialManager;
     }
 
-    // ====================== VALIDACIONES ======================
+    //VALIDACIONES
     private boolean existeUsuario(String usuario) {
         String sql = "SELECT COUNT(*) FROM usuarios WHERE usuario_login=?";
         try (PreparedStatement ps = this.conn.prepareStatement(sql)) {
@@ -67,7 +67,7 @@ public class ControllerAdministrador {
         }
     }
 
-    // ====================== PACIENTES ======================
+    //PACIENTES
 
     public void registrarPaciente(String usuario, String nombre, String apellido, String contrasenia,
                                   int nroContrato, String obraSocial) {
@@ -194,7 +194,7 @@ public class ControllerAdministrador {
         }
     }
 
-    // ====================== MÉDICOS ======================
+    // MÉDICOS
 
     public void registrarMedico(String usuario, String nombre, String apellido, String contrasenia,
                                 String matricula, String especialidad) {
@@ -378,7 +378,7 @@ public class ControllerAdministrador {
         eliminarUsuario(usuario);
     }
 
-    // ====================== USUARIOS ======================
+    //USUARIOS
 
     public void eliminarUsuario(String usuario) {
         String sql = "DELETE FROM usuarios WHERE usuario_login=?";

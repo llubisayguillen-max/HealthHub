@@ -20,9 +20,7 @@ public class ControllerHistorial {
         this.conn = conn;
     }
 
-    // ============================================================
     // CREAR REGISTRO
-    // ============================================================
     public boolean crearRegistro(Paciente paciente, Medico medico, String descripcion) {
         if (paciente == null || medico == null)
             throw new IllegalArgumentException("Paciente y médico son requeridos.");
@@ -51,9 +49,9 @@ public class ControllerHistorial {
         }
     }
 
-    // ============================================================
+
     // OBTENER ID PACIENTE / MÉDICO
-    // ============================================================
+
     private Long obtenerIdPacientePorUsuario(String usuario) throws SQLException {
         if (usuario == null || usuario.isBlank()) return null;
         String q = "SELECT p.id FROM pacientes p JOIN usuarios u ON p.id_usuario = u.id_usuario WHERE u.usuario_login = ?";
@@ -76,9 +74,8 @@ public class ControllerHistorial {
         }
     }
 
-    // ============================================================
     // LISTAR REGISTROS
-    // ============================================================
+
     public List<HistorialMedico> listarPorPaciente(long idPaciente) {
         List<HistorialMedico> lista = new ArrayList<>();
         String sql = "SELECT * FROM historial_medico WHERE id_paciente = ? ORDER BY fecha DESC";
@@ -125,9 +122,9 @@ public class ControllerHistorial {
         return lista;
     }
 
-    // ============================================================
+
     // OBTENER POR ID
-    // ============================================================
+
     public HistorialMedico obtenerPorId(long idRegistro) {
         String sql = "SELECT * FROM historial_medico WHERE id_registro = ?";
 
@@ -143,9 +140,9 @@ public class ControllerHistorial {
         return null;
     }
 
-    // ============================================================
+
     // ELIMINAR REGISTRO
-    // ============================================================
+
     public boolean eliminar(long idRegistro) {
         String sql = "DELETE FROM historial_medico WHERE id_registro = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -156,9 +153,9 @@ public class ControllerHistorial {
         }
     }
 
-    // ============================================================
-    // MAPEAR RESULTSET → HISTORIALMEDICO
-    // ============================================================
+
+    // MAPEAR HISTORIALMEDICO
+
     private HistorialMedico mapearRegistro(ResultSet rs) throws SQLException {
         int id = rs.getInt("id_registro");
         LocalDate fecha = rs.getDate("fecha").toLocalDate();

@@ -62,7 +62,6 @@ public class VerHistorialPacienteFrame extends JFrame {
     private void cargarHistorial() {
         modeloTabla.setRowCount(0);
 
-        // === LA CLAVE: el manager usa el usuario del paciente ===
         List<HistorialMedico> registros =
                 historialManager.listarPorPaciente(paciente.getUsuario());
 

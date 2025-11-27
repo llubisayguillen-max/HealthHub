@@ -24,9 +24,8 @@ public class CrearRegistroHistorialFrame extends JFrame {
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        // --------------------
         // PANEL CENTRAL
-        // --------------------
+
         JPanel panelCentro = new JPanel(new GridLayout(3, 2, 10, 10));
         panelCentro.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
@@ -46,9 +45,8 @@ public class CrearRegistroHistorialFrame extends JFrame {
 
         add(panelCentro, BorderLayout.CENTER);
 
-        // --------------------
         // BOTONES
-        // --------------------
+
         JPanel panelBotones = new JPanel(new FlowLayout());
         JButton btnGuardar = new JButton("Guardar");
         JButton btnVolver = new JButton("Volver");
@@ -58,9 +56,9 @@ public class CrearRegistroHistorialFrame extends JFrame {
 
         add(panelBotones, BorderLayout.SOUTH);
 
-        // --------------------
+
         // ACCIONES
-        // --------------------
+
         btnGuardar.addActionListener(e -> guardarRegistro(cmbPac, cmbMed, txtDesc));
         btnVolver.addActionListener(e -> dispose());
 

@@ -11,12 +11,10 @@ public class HistorialMedico {
     private String observaciones;
     private String[] archivos;
 
-    // AGREGADO ↓↓↓
+
     private Paciente paciente;
     private Medico medico;
-    // AGREGADO ↑↑↑
 
-    // Constructor COMPLETO (usado al crear desde la app)
     public HistorialMedico(int id, Paciente paciente, Medico medico,
                            LocalDate fechaCreacion, String observaciones, String[] archivos) {
 
@@ -29,7 +27,7 @@ public class HistorialMedico {
         this.archivos = archivos != null ? archivos : new String[0];
     }
 
-    // Constructor que ya tenías (sin paciente y médico → útil para DB)
+
     public HistorialMedico(int id, LocalDate fechaCreacion, String observaciones, String[] archivos) {
         this.id = id;
         this.fechaCreacion = fechaCreacion != null ? fechaCreacion : LocalDate.now();
@@ -37,7 +35,7 @@ public class HistorialMedico {
         this.archivos = archivos != null ? archivos : new String[0];
     }
 
-    // Constructor que ya tenías con Date
+
     public HistorialMedico(int id, Date fecha, String observaciones, String[] archivos) {
         this.id = id;
         if (fecha != null) {
@@ -49,9 +47,7 @@ public class HistorialMedico {
         this.archivos = archivos != null ? archivos : new String[0];
     }
 
-    // -----------------------
-    // GETTERS Y SETTERS
-    // -----------------------
+
 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
@@ -65,7 +61,7 @@ public class HistorialMedico {
     public String[] getArchivos() { return archivos; }
     public void setArchivos(String[] archivos) { this.archivos = archivos != null ? archivos : new String[0]; }
 
-    // AGREGADO ↓↓↓
+
     public Paciente getPaciente() { return paciente; }
     public void setPaciente(Paciente paciente) { this.paciente = paciente; }
 
