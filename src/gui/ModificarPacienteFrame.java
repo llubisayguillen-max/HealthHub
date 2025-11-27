@@ -1,33 +1,40 @@
-package gui.AdministradorFrame;
+package gui;
 
 import javax.swing.*;
 import java.awt.*;
-import bll.Administrador;
+
 import dll.ControllerAdministrador;
+import bll.Administrador;
+import bll.Paciente;
 
 import static gui.UiPaleta.*;
 
-public class ResetearContraseniaFrame extends JFrame {
+public class ModificarPacienteFrame extends JFrame {
 
-    private JTextField txtUsuario;
-    private JPasswordField txtNuevaPass;
-    private JCheckBox chkMostrarPass;
     private ControllerAdministrador controller;
     private Administrador admin;
+    private String usuarioBuscado;
+
+    private JTextField txtNombre, txtApellido, txtUsuario, txtContrato, txtOS;
+    private JPasswordField txtPass;
+
+    private RoundedButton btnGuardar;
 
     private static final String UI_FONT_FAMILY = "Segoe UI";
 
-    public ResetearContraseniaFrame(ControllerAdministrador controller, Administrador admin) {
+    public ModificarPacienteFrame(ControllerAdministrador controller, Administrador admin, String usuario) {
         this.controller = controller;
         this.admin = admin;
+        this.usuarioBuscado = usuario;
 
-        setTitle("HealthHub - Resetear Contraseña");
-        setSize(580, 430);
+        setTitle("HealthHub - Modificar Paciente");
+        setSize(580, 560);
         setLocationRelativeTo(null);
         setResizable(false);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
         initUI();
+        cargarDatosDelPaciente();
     }
 
     private void initUI() {
@@ -40,7 +47,7 @@ public class ResetearContraseniaFrame extends JFrame {
         topBar.setPreferredSize(new Dimension(getWidth(), 80));
         topBar.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
-        JLabel lblTitulo = new JLabel("Resetear Contraseña");
+        JLabel lblTitulo = new JLabel("Modificar Paciente");
         lblTitulo.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 24));
         lblTitulo.setForeground(Color.WHITE);
 
@@ -54,60 +61,73 @@ public class ResetearContraseniaFrame extends JFrame {
         RoundedCardPanel card = new RoundedCardPanel(18);
         card.setBackground(COLOR_CARD_BG);
         card.setBorderColor(COLOR_CARD_BORDER);
-        card.setPreferredSize(new Dimension(530, 260));
+        card.setPreferredSize(new Dimension(530, 430));
         card.setLayout(null);
 
         int y = 30;
 
-        //Usuario
+        //Usuario (no editable)
         card.add(crearLabel("Usuario:", 30, y));
-        txtUsuario = crearCampo(160, y);
+        txtUsuario = crearCampo(150, y);
+        txtUsuario.setEditable(false);
+        txtUsuario.setBackground(new Color(240, 240, 240));
         card.add(txtUsuario);
         y += 50;
 
-        //Nueva contraseña
-        card.add(crearLabel("Nueva Contraseña:", 30, y));
-        txtNuevaPass = new RoundedPasswordField(12);
-        txtNuevaPass.setBounds(160, y, 250, 35);
-        txtNuevaPass.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 14));
-        txtNuevaPass.setBorder(BorderFactory.createEmptyBorder(5, 12, 5, 12));
-        card.add(txtNuevaPass);
-        y += 45;
+        //Nombre
+        card.add(crearLabel("Nombre:", 30, y));
+        txtNombre = crearCampo(150, y);
+        card.add(txtNombre);
+        y += 50;
 
-        //Mostrar password
-        chkMostrarPass = new JCheckBox("Mostrar contraseña");
-        chkMostrarPass.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 14));
-        chkMostrarPass.setBackground(Color.WHITE);
-        chkMostrarPass.setBounds(160, y, 200, 30);
+        //Apellido
+        card.add(crearLabel("Apellido:", 30, y));
+        txtApellido = crearCampo(150, y);
+        card.add(txtApellido);
+        y += 50;
 
-        chkMostrarPass.addActionListener(e ->
-                txtNuevaPass.setEchoChar(chkMostrarPass.isSelected() ? 0 : '\u2022')
-        );
+        //Contraseña
+        card.add(crearLabel("Contraseña:", 30, y));
+        txtPass = new RoundedPasswordField(12);
+        txtPass.setBounds(150, y, 250, 35);
+        txtPass.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 14));
+        txtPass.setBorder(BorderFactory.createEmptyBorder(5, 12, 5, 12));
+        card.add(txtPass);
+        y += 50;
 
-        card.add(chkMostrarPass);
-        y += 60;
+        //Contrato
+        card.add(crearLabel("N° Contrato:", 30, y));
+        txtContrato = crearCampo(150, y);
+        card.add(txtContrato);
+        y += 50;
 
-        //Botón Resetear
-        RoundedButton btnResetear = new RoundedButton("Resetear");
-        btnResetear.setBackground(COLOR_ACCENT);
-        btnResetear.setForeground(Color.WHITE);
-        btnResetear.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 16));
-        btnResetear.setBounds(160, y, 200, 40);
-        btnResetear.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        //Obra Social
+        card.add(crearLabel("Obra Social:", 30, y));
+        txtOS = crearCampo(150, y);
+        card.add(txtOS);
+        y += 70;
 
-        btnResetear.addActionListener(e -> resetearPassword());
-        card.add(btnResetear);
+        //Guardar
+        btnGuardar = new RoundedButton("Guardar Cambios");
+        btnGuardar.setBackground(COLOR_ACCENT);
+        btnGuardar.setForeground(Color.WHITE);
+        btnGuardar.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 16));
+        btnGuardar.setBounds(155, y, 200, 40);
+        btnGuardar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        btnGuardar.addActionListener(e -> guardarCambios());
+
+        card.add(btnGuardar);
 
         wrapper.add(card);
         add(wrapper, BorderLayout.CENTER);
     }
 
-
-    private JLabel crearLabel(String txt, int x, int y) {
-        JLabel lbl = new JLabel(txt);
+    private JLabel crearLabel(String text, int x, int y) {
+        JLabel lbl = new JLabel(text);
         lbl.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 16));
         lbl.setForeground(MINT_DARK);
-        lbl.setBounds(x, y, 150, 30);
+        lbl.setBounds(x, y, 120, 30);
         return lbl;
     }
 
@@ -119,23 +139,55 @@ public class ResetearContraseniaFrame extends JFrame {
         return txt;
     }
 
-    private void resetearPassword() {
-        String usr = txtUsuario.getText().trim();
-        String nueva = new String(txtNuevaPass.getPassword()).trim();
 
-        if (usr.isEmpty() || nueva.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Debe completar todos los campos");
+    private void cargarDatosDelPaciente() {
+
+        Paciente p = controller.obtenerPaciente(usuarioBuscado);
+
+        if (p == null) {
+            JOptionPane.showMessageDialog(this, "Paciente no encontrado.");
+            dispose();
             return;
         }
 
-        controller.resetearContrasenia(usr, nueva);
-        JOptionPane.showMessageDialog(this, "Contraseña actualizada correctamente.");
+        txtUsuario.setText(p.getUsuario());
+        txtNombre.setText(p.getNombre());
+        txtApellido.setText(p.getApellido());
+        txtPass.setText(p.getContrasenia());
+        txtContrato.setText(String.valueOf(p.getNroContrato()));
+        txtOS.setText(p.getObraSocial());
+    }
+
+    private void guardarCambios() {
+
+        String usr = txtUsuario.getText().trim();
+        String nom = txtNombre.getText().trim();
+        String ape = txtApellido.getText().trim();
+        String pass = new String(txtPass.getPassword()).trim();
+        String nro = txtContrato.getText().trim();
+        String os = txtOS.getText().trim();
+
+        if (nom.isEmpty()) { mensaje("Ingrese el nombre."); return; }
+        if (ape.isEmpty()) { mensaje("Ingrese el apellido."); return; }
+        if (pass.isEmpty()) { mensaje("Ingrese la contraseña."); return; }
+        if (!nro.matches("\\d+")) { mensaje("El contrato debe ser numérico."); return; }
+        if (os.isEmpty()) { mensaje("Ingrese la obra social."); return; }
+
+        controller.modificarPaciente(
+                usr, nom, ape, pass, Integer.parseInt(nro), os
+        );
+
+        JOptionPane.showMessageDialog(this, "Paciente modificado correctamente.");
         dispose();
+    }
+
+    private void mensaje(String msg) {
+        JOptionPane.showMessageDialog(this, msg);
     }
 
 
     class RoundedTextField extends JTextField {
-        private final int radius;
+        private int radius;
 
         public RoundedTextField(int radius) {
             this.radius = radius;
@@ -159,7 +211,7 @@ public class ResetearContraseniaFrame extends JFrame {
     }
 
     class RoundedPasswordField extends JPasswordField {
-        private final int radius;
+        private int radius;
 
         public RoundedPasswordField(int radius) {
             this.radius = radius;

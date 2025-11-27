@@ -1,10 +1,9 @@
-package gui.AdministradorFrame;
+package gui;
 
 import javax.swing.*;
 import java.awt.*;
 
 import dll.ControllerAdministrador;
-
 import static gui.UiPaleta.*;
 
 public class EliminarUsuarioFrame extends JFrame {

@@ -1,4 +1,4 @@
-package gui.AdministradorFrame;
+package gui;
 
 import javax.swing.*;
 import java.awt.*;
