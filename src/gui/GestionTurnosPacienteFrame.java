@@ -137,10 +137,10 @@ public class GestionTurnosPacienteFrame extends JFrame {
 		JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 		btnPanel.setBackground(Color.WHITE);
 
-		RoundedButton btnConfirmar = new RoundedButton("Confirmar Asistencia");
+		// RoundedButton btnConfirmar = new RoundedButton("Confirmar Asistencia");
 
-		estiloBotonAccion(btnConfirmar, new Color(40, 167, 69));
-		btnConfirmar.addActionListener(e -> confirmarTurnoSeleccionado());
+		// estiloBotonAccion(btnConfirmar, new Color(40, 167, 69));
+		// btnConfirmar.addActionListener(e -> confirmarTurnoSeleccionado());
 
 		RoundedButton btnCancelar = new RoundedButton("Cancelar Turno");
 		estiloBotonAccion(btnCancelar, COLOR_DANGER);
@@ -151,7 +151,7 @@ public class GestionTurnosPacienteFrame extends JFrame {
 		btnNuevo.addActionListener(e -> abrirSolicitudTurno());
 
 		// Agregamos los botones al panel
-		btnPanel.add(btnConfirmar);
+		// btnPanel.add(btnConfirmar);
 		btnPanel.add(Box.createHorizontalStrut(10));
 		btnPanel.add(btnCancelar);
 		btnPanel.add(Box.createHorizontalStrut(10));
@@ -277,43 +277,48 @@ public class GestionTurnosPacienteFrame extends JFrame {
 		}
 	}
 
-	private void confirmarTurnoSeleccionado() {
-		int row = tablaProximos.getSelectedRow();
-		if (row == -1) {
-			JOptionPane.showMessageDialog(this, "Seleccioná un turno de la lista para confirmar.");
-			return;
-		}
+	// private void confirmarTurnoSeleccionado() {
+	// int row = tablaProximos.getSelectedRow();
+	// if (row == -1) {
+	// JOptionPane.showMessageDialog(this, "Seleccioná un turno de la lista para
+	// confirmar.");
+	// return;
+	// }
 
-		String estadoActual = (String) modeloProximos.getValueAt(row, 5);
+	// String estadoActual = (String) modeloProximos.getValueAt(row, 5);
 
-		if ("Confirmado".equalsIgnoreCase(estadoActual)) {
-			JOptionPane.showMessageDialog(this, "Este turno ya se encuentra confirmado.", "Información",
-					JOptionPane.INFORMATION_MESSAGE);
-			return;
-		}
+	// if ("Confirmado".equalsIgnoreCase(estadoActual)) {
+	// JOptionPane.showMessageDialog(this, "Este turno ya se encuentra confirmado.",
+	// "Información",
+	// JOptionPane.INFORMATION_MESSAGE);
+	// return;
+	// }
 
-		if (!"Reservado".equalsIgnoreCase(estadoActual)) {
-			JOptionPane.showMessageDialog(this, "Solo se pueden confirmar turnos que estén en estado 'Reservado'.",
-					"Aviso", JOptionPane.WARNING_MESSAGE);
-			return;
-		}
+	// if (!"Reservado".equalsIgnoreCase(estadoActual)) {
+	// JOptionPane.showMessageDialog(this, "Solo se pueden confirmar turnos que
+	// estén en estado 'Reservado'.",
+	// "Aviso", JOptionPane.WARNING_MESSAGE);
+	// return;
+	// }
 
-		long idTurno = (long) modeloProximos.getValueAt(row, 0);
+	// long idTurno = (long) modeloProximos.getValueAt(row, 0);
 
-		int confirm = JOptionPane.showConfirmDialog(this, "¿Confirmar asistencia al turno seleccionado?",
-				"Confirmar Turno", JOptionPane.YES_NO_OPTION);
+	// int confirm = JOptionPane.showConfirmDialog(this, "¿Confirmar asistencia al
+	// turno seleccionado?",
+	// "Confirmar Turno", JOptionPane.YES_NO_OPTION);
 
-		if (confirm == JOptionPane.YES_OPTION) {
-			try {
-				controller.confirmarAsistencia(idTurno);
-				JOptionPane.showMessageDialog(this, "¡Asistencia confirmada exitosamente!");
-				cargarDatos();
-			} catch (Exception e) {
-				JOptionPane.showMessageDialog(this, "Error al confirmar: " + e.getMessage(), "Error",
-						JOptionPane.ERROR_MESSAGE);
-			}
-		}
-	}
+	// if (confirm == JOptionPane.YES_OPTION) {
+	// try {
+	// controller.confirmarAsistencia(idTurno);
+	// JOptionPane.showMessageDialog(this, "¡Asistencia confirmada exitosamente!");
+	// cargarDatos();
+	// } catch (Exception e) {
+	// JOptionPane.showMessageDialog(this, "Error al confirmar: " + e.getMessage(),
+	// "Error",
+	// JOptionPane.ERROR_MESSAGE);
+	// }
+//	}
+	// }
 
 	private void abrirSolicitudTurno() {
 
@@ -484,7 +489,7 @@ public class GestionTurnosPacienteFrame extends JFrame {
 		panel.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
 		panel.setMaximumSize(new Dimension(2000, 50));
 		panel.setAlignmentX(Component.LEFT_ALIGNMENT);
-
+		
 		JLabel lblNombre = new JLabel(nombre + "  (" + peso + ")");
 		lblNombre.setFont(BODY);
 		lblNombre.setForeground(new Color(60, 60, 60));
