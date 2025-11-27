@@ -1,22 +1,23 @@
-package gui;
+package gui.AdministradorFrame;
 
 import javax.swing.*;
 import java.awt.*;
 
 import dll.ControllerAdministrador;
+
 import static gui.UiPaleta.*;
 
-public class DesbloquearUsuarioFrame extends JFrame {
+public class BloquearUsuarioFrame extends JFrame {
 
     private JTextField txtUsuario;
     private ControllerAdministrador controller;
 
     private static final String UI_FONT_FAMILY = "Segoe UI";
 
-    public DesbloquearUsuarioFrame(ControllerAdministrador controller) {
+    public BloquearUsuarioFrame(ControllerAdministrador controller) {
         this.controller = controller;
 
-        setTitle("HealthHub - Desbloquear Usuario");
+        setTitle("HealthHub - Bloquear Usuario");
         setSize(580, 430);
         setLocationRelativeTo(null);
         setResizable(false);
@@ -35,7 +36,7 @@ public class DesbloquearUsuarioFrame extends JFrame {
         topBar.setPreferredSize(new Dimension(getWidth(), 80));
         topBar.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
-        JLabel lblTitulo = new JLabel("Desbloquear Usuario");
+        JLabel lblTitulo = new JLabel("Bloquear Usuario");
         lblTitulo.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 24));
         lblTitulo.setForeground(Color.WHITE);
 
@@ -49,7 +50,7 @@ public class DesbloquearUsuarioFrame extends JFrame {
         RoundedCardPanel card = new RoundedCardPanel(18);
         card.setBackground(COLOR_CARD_BG);
         card.setBorderColor(COLOR_CARD_BORDER);
-        card.setPreferredSize(new Dimension(530, 260));
+        card.setPreferredSize(new Dimension(530, 220));
         card.setLayout(null);
 
         int y = 40;
@@ -58,25 +59,23 @@ public class DesbloquearUsuarioFrame extends JFrame {
         card.add(crearLabel("Usuario:", 30, y));
         txtUsuario = crearCampo(160, y);
         card.add(txtUsuario);
-        y += 55;
+        y += 60;
 
-        //Botón Desbloquear
-        RoundedButton btnDesbloquear = new RoundedButton("Desbloquear");
-        btnDesbloquear.setBackground(COLOR_ACCENT);
-        btnDesbloquear.setForeground(Color.WHITE);
-        btnDesbloquear.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 16));
-        btnDesbloquear.setBounds(160, y, 200, 40);
-        btnDesbloquear.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-        btnDesbloquear.addActionListener(e -> desbloquearUsuario());
-        card.add(btnDesbloquear);
-        y += 55;
-
+        //Botón Bloquear
+        RoundedButton btnBloquear = new RoundedButton("Bloquear");
+        btnBloquear.setBackground(COLOR_ACCENT);
+        btnBloquear.setForeground(Color.WHITE);
+        btnBloquear.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 16));
+        btnBloquear.setBounds(160, y, 200, 40);
+        btnBloquear.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnBloquear.addActionListener(e -> bloquearUsuario());
+        card.add(btnBloquear);
 
         wrapper.add(card);
         add(wrapper, BorderLayout.CENTER);
     }
 
+    //helpers
 
     private JLabel crearLabel(String txt, int x, int y) {
         JLabel lbl = new JLabel(txt);
@@ -94,7 +93,7 @@ public class DesbloquearUsuarioFrame extends JFrame {
         return txt;
     }
 
-    private void desbloquearUsuario() {
+    private void bloquearUsuario() {
         String usr = txtUsuario.getText().trim();
 
         if (usr.isEmpty()) {
@@ -102,10 +101,11 @@ public class DesbloquearUsuarioFrame extends JFrame {
             return;
         }
 
-        controller.desbloquearUsuario(usr);
-        JOptionPane.showMessageDialog(this, "Usuario desbloqueado exitosamente.");
+        controller.bloquearUsuario(usr);
+        JOptionPane.showMessageDialog(this, "Usuario bloqueado correctamente.");
         dispose();
     }
+
 
 
     class RoundedTextField extends JTextField {
@@ -159,4 +159,3 @@ public class DesbloquearUsuarioFrame extends JFrame {
         }
     }
 }
-

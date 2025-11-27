@@ -1,31 +1,46 @@
-package gui;
+package gui.AdministradorFrame;
 
 import javax.swing.*;
 import java.awt.*;
-import bll.Administrador;
+
 import dll.ControllerAdministrador;
+import bll.Administrador;
+import bll.Paciente;
+
 import static gui.UiPaleta.*;
 
-public class AltaPacienteFrame extends JFrame {
+public class ModificarPacienteFrame extends JFrame {
 
-    private JTextField txtNombre, txtApellido, txtUsuario, txtContrato, txtObraSocial;
-    private JPasswordField txtPassword;
     private ControllerAdministrador controller;
     private Administrador admin;
+    private String usuarioBuscado;
+
+    private MenuAdministradorFrame menu;   // ← agregado
+
+    private JTextField txtNombre, txtApellido, txtUsuario, txtContrato, txtOS;
+    private JPasswordField txtPass;
+
+    private RoundedButton btnGuardar;
 
     private static final String UI_FONT_FAMILY = "Segoe UI";
 
-    public AltaPacienteFrame(ControllerAdministrador controller, Administrador admin) {
+    // ← constructor modificado para recibir el menú
+    public ModificarPacienteFrame(ControllerAdministrador controller, Administrador admin,
+                                  String usuario, MenuAdministradorFrame menu) {
+
         this.controller = controller;
         this.admin = admin;
+        this.usuarioBuscado = usuario;
+        this.menu = menu;
 
-        setTitle("HealthHub - Alta de Paciente");
+        setTitle("HealthHub - Modificar Paciente");
         setSize(580, 560);
         setLocationRelativeTo(null);
         setResizable(false);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
         initUI();
+        cargarDatosDelPaciente();
     }
 
     private void initUI() {
@@ -33,20 +48,19 @@ public class AltaPacienteFrame extends JFrame {
         getContentPane().setBackground(COLOR_BACKGROUND);
         setLayout(new BorderLayout());
 
-        // ---------- TOP BAR ----------
         JPanel topBar = new JPanel(new BorderLayout());
         topBar.setBackground(COLOR_PRIMARY);
         topBar.setPreferredSize(new Dimension(getWidth(), 80));
         topBar.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
-        JLabel lblTitulo = new JLabel("Alta de Paciente");
+        JLabel lblTitulo = new JLabel("Modificar Paciente");
         lblTitulo.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 24));
         lblTitulo.setForeground(Color.WHITE);
 
         topBar.add(lblTitulo, BorderLayout.WEST);
         add(topBar, BorderLayout.NORTH);
 
-        // ---------- FORM CARD ----------
+        //card
         JPanel wrapper = new JPanel(new GridBagLayout());
         wrapper.setBackground(COLOR_BACKGROUND);
 
@@ -54,65 +68,66 @@ public class AltaPacienteFrame extends JFrame {
         card.setBackground(COLOR_CARD_BG);
         card.setBorderColor(COLOR_CARD_BORDER);
         card.setPreferredSize(new Dimension(530, 430));
-        card.setLayout(null); 
+        card.setLayout(null);
+
         int y = 30;
 
-        // === Usuario ===
+        //Usuario
         card.add(crearLabel("Usuario:", 30, y));
         txtUsuario = crearCampo(150, y);
+        txtUsuario.setEditable(false);
+        txtUsuario.setBackground(new Color(240, 240, 240));
         card.add(txtUsuario);
         y += 50;
 
-        // === Nombre ===
+        //Nombre
         card.add(crearLabel("Nombre:", 30, y));
         txtNombre = crearCampo(150, y);
         card.add(txtNombre);
         y += 50;
 
-        // === Apellido ===
+        //Apellido
         card.add(crearLabel("Apellido:", 30, y));
         txtApellido = crearCampo(150, y);
         card.add(txtApellido);
         y += 50;
 
-        // === Contraseña ===
+        //Contraseña
         card.add(crearLabel("Contraseña:", 30, y));
-        txtPassword = new RoundedPasswordField(12);
-        txtPassword.setBounds(150, y, 250, 35);
-        txtPassword.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 14));
-        txtPassword.setBorder(BorderFactory.createEmptyBorder(5, 12, 5, 12));
-        card.add(txtPassword);
+        txtPass = new RoundedPasswordField(12);
+        txtPass.setBounds(150, y, 250, 35);
+        txtPass.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 14));
+        txtPass.setBorder(BorderFactory.createEmptyBorder(5, 12, 5, 12));
+        card.add(txtPass);
         y += 50;
 
-        // === Contrato ===
+        //Contrato
         card.add(crearLabel("N° Contrato:", 30, y));
         txtContrato = crearCampo(150, y);
         card.add(txtContrato);
         y += 50;
 
-        // === Obra Social ===
+        //Obra Social
         card.add(crearLabel("Obra Social:", 30, y));
-        txtObraSocial = crearCampo(150, y);
-        card.add(txtObraSocial);
+        txtOS = crearCampo(150, y);
+        card.add(txtOS);
         y += 70;
 
-        //guardar
-        RoundedButton btnGuardar = new RoundedButton("Guardar");
+        //Guardar
+        btnGuardar = new RoundedButton("Guardar Cambios");
         btnGuardar.setBackground(COLOR_ACCENT);
         btnGuardar.setForeground(Color.WHITE);
         btnGuardar.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 16));
         btnGuardar.setBounds(155, y, 200, 40);
         btnGuardar.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        btnGuardar.addActionListener(e -> guardarPaciente());
+        btnGuardar.addActionListener(e -> guardarCambios());
 
         card.add(btnGuardar);
 
         wrapper.add(card);
         add(wrapper, BorderLayout.CENTER);
     }
-
-    //helpers
 
     private JLabel crearLabel(String text, int x, int y) {
         JLabel lbl = new JLabel(text);
@@ -130,44 +145,67 @@ public class AltaPacienteFrame extends JFrame {
         return txt;
     }
 
-    private void guardarPaciente() {
-        try {
-            String usuario = txtUsuario.getText().trim();
-            String nombre = txtNombre.getText().trim();
-            String apellido = txtApellido.getText().trim();
-            String pass = new String(txtPassword.getPassword()).trim();
-            String contrato = txtContrato.getText().trim();
-            String obra = txtObraSocial.getText().trim();
 
-            if (usuario.isEmpty() || nombre.isEmpty() || apellido.isEmpty() ||
-                    pass.isEmpty() || contrato.isEmpty() || obra.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Debe completar todos los campos");
-                return;
-            }
+    private void cargarDatosDelPaciente() {
 
-            if (!contrato.matches("\\d+")) {
-                JOptionPane.showMessageDialog(this, "El contrato debe ser numérico");
-                return;
-            }
+        Paciente p = controller.obtenerPaciente(usuarioBuscado);
 
-            controller.registrarPaciente(usuario, nombre, apellido, pass,
-                    Integer.parseInt(contrato), obra);
+        if (p == null) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "El paciente no existe.\nIngrese un paciente válido.",
+                    "Paciente no encontrado",
+                    JOptionPane.WARNING_MESSAGE
+            );
 
-            JOptionPane.showMessageDialog(this, "Paciente registrado correctamente");
-            dispose();
-
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error al registrar: " + ex.getMessage());
+            dispose();         
+            menu.setVisible(true); // vuelve al menú de administrador
+            return;
         }
+
+        txtUsuario.setText(p.getUsuario());
+        txtNombre.setText(p.getNombre());
+        txtApellido.setText(p.getApellido());
+        txtPass.setText(p.getContrasenia());
+        txtContrato.setText(String.valueOf(p.getNroContrato()));
+        txtOS.setText(p.getObraSocial());
     }
 
-    // ---------- Componentes redondeados ----------
+    private void guardarCambios() {
+
+        String usr = txtUsuario.getText().trim();
+        String nom = txtNombre.getText().trim();
+        String ape = txtApellido.getText().trim();
+        String pass = new String(txtPass.getPassword()).trim();
+        String nro = txtContrato.getText().trim();
+        String os = txtOS.getText().trim();
+
+        if (nom.isEmpty()) { mensaje("Ingrese el nombre."); return; }
+        if (ape.isEmpty()) { mensaje("Ingrese el apellido."); return; }
+        if (pass.isEmpty()) { mensaje("Ingrese la contraseña."); return; }
+        if (!nro.matches("\\d+")) { mensaje("El contrato debe ser numérico."); return; }
+        if (os.isEmpty()) { mensaje("Ingrese la obra social."); return; }
+
+        controller.modificarPaciente(
+                usr, nom, ape, pass, Integer.parseInt(nro), os
+        );
+
+        JOptionPane.showMessageDialog(this, "Paciente modificado correctamente.");
+        dispose();
+        menu.setVisible(true);
+    }
+
+    private void mensaje(String msg) {
+        JOptionPane.showMessageDialog(this, msg);
+    }
+
+
+    // -------------------- COMPONENTES REDONDEADOS --------------------
 
     class RoundedTextField extends JTextField {
         private int radius;
 
         public RoundedTextField(int radius) {
-            super();
             this.radius = radius;
             setOpaque(false);
         }
@@ -192,7 +230,6 @@ public class AltaPacienteFrame extends JFrame {
         private int radius;
 
         public RoundedPasswordField(int radius) {
-            super();
             this.radius = radius;
             setOpaque(false);
         }
@@ -236,7 +273,7 @@ public class AltaPacienteFrame extends JFrame {
             g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
 
             g2.setColor(borderColor);
-            g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, radius, radius);
+            g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radius, radius);
         }
     }
 }

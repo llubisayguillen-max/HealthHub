@@ -1,9 +1,11 @@
-package gui;
+package gui.AdministradorFrame;
 
 import javax.swing.*;
 import java.awt.*;
 import bll.Administrador;
 import dll.ControllerAdministrador;
+import gui.LoginFrame;
+
 import static gui.UiPaleta.*;
 
 public class MenuAdministradorFrame extends JFrame {
@@ -81,7 +83,7 @@ public class MenuAdministradorFrame extends JFrame {
                                     JOptionPane.QUESTION_MESSAGE
                             );
                             if (usuario != null && !usuario.isBlank())
-                                new ModificarPacienteFrame(controller, admin, usuario.trim()).setVisible(true);
+                                new ModificarPacienteFrame(controller, admin, usuario.trim(), null).setVisible(true);
                         }
                 }
         );
