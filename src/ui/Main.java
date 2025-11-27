@@ -110,7 +110,8 @@ public class Main {
 		if (u instanceof Paciente p) {
 			ControllerPaciente cp = new ControllerPaciente(p);
 
-			String[] ops = { "Buscar médicos por especialidad", "Ver disponibilidad de un médico", "Reservar turno",
+			// Array de opciones actualizado
+			String[] ops = { "Buscar médicos por especialidad", "Ver disponibilidad (por fecha)", "Reservar turno",
 					"Ver mis turnos activos", "Cancelar turno", "Confirmar asistencia", "Agregar a favoritos",
 					"Ver favoritos", "Ver recomendaciones", "Salir" };
 
@@ -128,211 +129,217 @@ public class Main {
 				// Funcionalidades
 				try {
 					switch (op) {
+
 					case "Buscar médicos por especialidad" -> {
 						String esp = JOptionPane.showInputDialog(null, "Especialidad (ej: Clínica Médica):");
 						if (esp == null)
 							continue;
-						var meds = cp.filtrarPorEspecialidad(esp.trim());
+
+						var todos = cp.obtenerTodosMedicos();
+						var meds = todos.stream()
+								.filter(m -> m.getEspecialidad().toLowerCase().contains(esp.toLowerCase().trim()))
+								.toList();
+
 						if (meds.isEmpty()) {
-							JOptionPane.showMessageDialog(null, "No se encontraron médicos");
+							JOptionPane.showMessageDialog(null, "No se encontraron médicos con esa especialidad.");
 						} else {
-							StringBuilder sb = new StringBuilder("Médicos:\n");
+							StringBuilder sb = new StringBuilder("Médicos encontrados:\n");
 							meds.forEach(m -> sb.append("- ").append(m.getNombre()).append(" ").append(m.getApellido())
-									.append(" : ").append(m.getEspecialidad()).append("\n"));
+									.append(" (").append(m.getUsuario()).append(") : ").append(m.getEspecialidad())
+									.append("\n"));
 							JTextArea ta = new JTextArea(sb.toString());
 							ta.setEditable(false);
 							JOptionPane.showMessageDialog(null, new JScrollPane(ta));
 						}
 					}
 
-					case "Ver disponibilidad de un médico" -> {
-						String esp = JOptionPane.showInputDialog(null, "Especialidad (ej: Clínica Médica):");
-						if (esp == null || esp.trim().isEmpty())
-							continue;
+					case "Ver disponibilidad (por fecha)" -> {
 
-						List<Medico> meds = cp.filtrarPorEspecialidad(esp.trim());
-						if (meds.isEmpty()) {
-							JOptionPane.showMessageDialog(null, "No se encontraron médicos");
-							continue;
+						String[] especialidades = cp.obtenerEspecialidades();
+						if (especialidades.length == 0) {
+							JOptionPane.showMessageDialog(null, "No hay especialidades cargadas.");
+							break;
 						}
+						String esp = (String) JOptionPane.showInputDialog(null, "Selecciona especialidad:",
+								"Disponibilidad", JOptionPane.PLAIN_MESSAGE, null, especialidades, especialidades[0]);
+						if (esp == null)
+							break;
 
-						Medico[] medArray = meds.toArray(new Medico[0]);
-						for (int i = 0; i < medArray.length; i++) {
-							Medico m = medArray[i];
-							medArray[i] = new Medico(m.getNombre(), m.getApellido(), m.getUsuario(), m.getContrasenia(),
-									m.getMatricula(), m.getEspecialidad()) {
-								@Override
-								public String toString() {
-									return getNombre() + " " + getApellido() + " | " + getEspecialidad();
-								}
-							};
-						}
+						String fechaStr = JOptionPane.showInputDialog("Ingrese fecha (dd/MM/yyyy):");
+						if (fechaStr == null || fechaStr.isBlank())
+							break;
 
-						Object medChoice = JOptionPane.showInputDialog(null, "Seleccione un médico",
-								"Médicos disponibles", JOptionPane.PLAIN_MESSAGE, null, medArray, medArray[0]);
-						if (medChoice == null)
-							continue;
+						try {
+							java.time.format.DateTimeFormatter dtf = java.time.format.DateTimeFormatter
+									.ofPattern("dd/MM/yyyy");
+							java.time.LocalDate fecha = java.time.LocalDate.parse(fechaStr, dtf);
 
-						Medico seleccionado = (Medico) medChoice;
-						String userMed = seleccionado.getUsuario();
+							List<dll.ControllerPaciente.TurnoDisponible> disponibles = cp.buscarTurnos(esp, fecha,
+									fecha);
 
-						List<String> franjas = cp.obtenerHorariosDisponibles(userMed);
-						if (franjas.isEmpty()) {
-							JOptionPane.showMessageDialog(null, "Sin disponibilidad");
-						} else {
-							StringBuilder sb = new StringBuilder("Disponibilidad:\n");
-							for (String f : franjas)
-								sb.append("• ").append(f).append("\n");
+							StringBuilder sb = new StringBuilder("Turnos disponibles para " + fechaStr + ":\n");
+							for (var td : disponibles) {
+								sb.append("• ").append(td.medicoNombre()).append(" | Hora: ").append(td.horaInicio())
+										.append("\n");
+							}
+
 							JTextArea ta = new JTextArea(sb.toString());
 							ta.setEditable(false);
 							JOptionPane.showMessageDialog(null, new JScrollPane(ta));
+
+						} catch (java.time.format.DateTimeParseException ex) {
+							JOptionPane.showMessageDialog(null, "Formato de fecha inválido.");
+						} catch (IllegalStateException ex) {
+							JOptionPane.showMessageDialog(null, ex.getMessage());
 						}
 					}
 
 					case "Reservar turno" -> {
 						try {
-							// elegir especialidad
+							// Elegir especialidad
 							String[] especialidades = cp.obtenerEspecialidades();
 							if (especialidades == null || especialidades.length == 0) {
 								JOptionPane.showMessageDialog(null, "No hay especialidades disponibles.");
 								break;
 							}
-
 							String esp = (String) JOptionPane.showInputDialog(null, "Selecciona una especialidad:",
-									"Especialidad", JOptionPane.PLAIN_MESSAGE, null, especialidades, especialidades[0]);
+									"Reservar", JOptionPane.PLAIN_MESSAGE, null, especialidades, especialidades[0]);
 							if (esp == null)
 								break;
 
-							// elegir médico
-							var medicos = cp.filtrarPorEspecialidad(esp);
-							if (medicos.isEmpty()) {
-								JOptionPane.showMessageDialog(null, "No hay médicos para esa especialidad.");
+							// Elegir Fecha
+							String fechaStr = JOptionPane.showInputDialog("Ingrese fecha del turno (dd/MM/yyyy):");
+							if (fechaStr == null)
 								break;
+
+							java.time.format.DateTimeFormatter dtf = java.time.format.DateTimeFormatter
+									.ofPattern("dd/MM/yyyy");
+							java.time.LocalDate fecha = java.time.LocalDate.parse(fechaStr, dtf);
+
+							// Buscar disponibilidad
+							List<dll.ControllerPaciente.TurnoDisponible> turnosDisp = cp.buscarTurnos(esp, fecha,
+									fecha);
+
+							// Convertir a Array de Strings para que el usuario elija
+							String[] opcionesTurnos = new String[turnosDisp.size()];
+							for (int i = 0; i < turnosDisp.size(); i++) {
+								var t = turnosDisp.get(i);
+								opcionesTurnos[i] = t.medicoNombre() + " a las " + t.horaInicio();
 							}
 
-							String[] medOptions = medicos.stream()
-									.map(m -> m.getNombre() + " " + m.getApellido() + " (" + m.getUsuario() + ")")
-									.toArray(String[]::new);
-							String medElegido = (String) JOptionPane.showInputDialog(null, "Selecciona un médico:",
-									"Médico", JOptionPane.PLAIN_MESSAGE, null, medOptions, medOptions[0]);
-							if (medElegido == null)
+							String seleccion = (String) JOptionPane.showInputDialog(null, "Seleccione horario:",
+									"Horarios disponibles", JOptionPane.PLAIN_MESSAGE, null, opcionesTurnos,
+									opcionesTurnos[0]);
+
+							if (seleccion == null)
 								break;
 
-							String usernameMedico = medElegido.split("\\(")[1].replace(")", "");
-
-							// obtener franjas disponibles
-							var franjas = cp.obtenerHorariosDisponibles(usernameMedico);
-							if (franjas.isEmpty()) {
-								JOptionPane.showMessageDialog(null, "Este médico no tiene horarios disponibles.");
-								break;
+							// Encontrar el objeto seleccionado para sacar el ID
+							int index = -1;
+							for (int i = 0; i < opcionesTurnos.length; i++) {
+								if (opcionesTurnos[i].equals(seleccion)) {
+									index = i;
+									break;
+								}
 							}
 
-							String franjaElegida = (String) JOptionPane.showInputDialog(null,
-									"Selecciona fecha y horario", "Franja disponible", JOptionPane.PLAIN_MESSAGE, null,
-									franjas.toArray(), franjas.get(0));
-							if (franjaElegida == null)
-								break;
+							if (index != -1) {
+								long idDisponibilidad = turnosDisp.get(index).idDisponibilidad();
+								// Solicitar Turno con el ID
+								long idTurno = cp.solicitarTurno(idDisponibilidad);
+								JOptionPane.showMessageDialog(null,
+										"Turno reservado correctamente. ID Turno: " + idTurno);
+							}
 
-							// convertir franja seleccionada a Date
-
-							String fechaStr = franjaElegida.split(" - ")[0].trim();
-							String horaInicioStr = franjaElegida.split(" - ")[1].split("a")[0].trim();
-
-							LocalDate fecha = LocalDate.parse(fechaStr);
-							LocalTime hora = LocalTime.parse(horaInicioStr);
-							ZonedDateTime zdt = fecha.atTime(hora).atZone(ZoneId.systemDefault());
-							Date fechaHora = Date.from(zdt.toInstant());
-
-							cp.solicitarTurno(usernameMedico, fechaHora);
-							JOptionPane.showMessageDialog(null, "Turno reservado correctamente.");
-
+						} catch (java.time.format.DateTimeParseException ex) {
+							JOptionPane.showMessageDialog(null, "Fecha inválida (use dd/MM/yyyy).");
 						} catch (Exception e) {
-							JOptionPane.showMessageDialog(null, "Error al reservar turno: " + e.getMessage(), "Error",
+							JOptionPane.showMessageDialog(null, "Error al reservar: " + e.getMessage(), "Error",
 									JOptionPane.ERROR_MESSAGE);
 						}
 					}
 
 					case "Ver mis turnos activos" -> {
-						var list = cp.turnosActivos();
-						if (list.isEmpty()) {
-							JOptionPane.showMessageDialog(null, "No tienes turnos activos");
-						} else {
+						try {
+							var list = cp.turnosActivos();
 							StringBuilder sb = new StringBuilder("Turnos activos:\n");
-							DateTimeFormatter fmt = DateTimeFormatter.ofPattern("EEEE dd 'de' MMMM yyyy, HH:mm",
-									Locale.forLanguageTag("es-AR"));
+							java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern(
+									"EEEE dd 'de' MMMM yyyy, HH:mm", java.util.Locale.forLanguageTag("es-AR"));
 
 							list.forEach(t -> {
-								LocalDateTime ldt = t.getFechaHora().toInstant().atZone(ZoneId.systemDefault())
-										.toLocalDateTime();
-								sb.append("- ").append(ldt.format(fmt)).append(" | estado: ").append(t.getEstado())
-										.append("\n");
+								java.time.LocalDateTime ldt = t.getFechaHora().toInstant()
+										.atZone(java.time.ZoneId.systemDefault()).toLocalDateTime();
+								sb.append("- ").append(ldt.format(fmt)).append(" | Médico: ")
+										.append(t.getMedico() != null ? t.getMedico().getNombreCompleto() : "N/D")
+										.append(" | Estado: ").append(t.getEstado()).append("\n");
 							});
 
 							JTextArea ta = new JTextArea(sb.toString());
 							ta.setEditable(false);
 							JOptionPane.showMessageDialog(null, new JScrollPane(ta));
+						} catch (IllegalStateException ex) {
+							JOptionPane.showMessageDialog(null, ex.getMessage());
 						}
 					}
 
 					case "Cancelar turno" -> {
-						List<Turno> turnos = cp.turnosActivos();
-						if (turnos.isEmpty()) {
-							JOptionPane.showMessageDialog(null, "No tienes turnos activos.");
-							break;
+						try {
+							List<bll.Turno> turnos = cp.turnosActivos();
+							java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter
+									.ofPattern("dd/MM/yyyy HH:mm");
+
+							String[] opciones = new String[turnos.size()];
+							for (int i = 0; i < turnos.size(); i++) {
+								bll.Turno t = turnos.get(i);
+								java.time.LocalDateTime ldt = t.getFechaHora().toInstant()
+										.atZone(java.time.ZoneId.systemDefault()).toLocalDateTime();
+								opciones[i] = "ID " + t.getIdTurno() + " - " + ldt.format(fmt);
+							}
+
+							String elegido = (String) JOptionPane.showInputDialog(null,
+									"Selecciona el turno a cancelar:", "Cancelar turno", JOptionPane.PLAIN_MESSAGE,
+									null, opciones, opciones[0]);
+
+							if (elegido == null)
+								break;
+
+							long idSeleccionado = Long.parseLong(elegido.split(" ")[1]);
+							cp.cancelarTurno(idSeleccionado);
+							JOptionPane.showMessageDialog(null, "Turno cancelado correctamente.");
+						} catch (IllegalStateException ex) {
+							JOptionPane.showMessageDialog(null, ex.getMessage());
 						}
-
-						DateTimeFormatter fmt = DateTimeFormatter.ofPattern("EEEE dd 'de' MMMM yyyy, HH:mm",
-								Locale.forLanguageTag("es-AR"));
-						String[] opciones = new String[turnos.size()];
-
-						for (int i = 0; i < turnos.size(); i++) {
-							Turno t = turnos.get(i);
-							opciones[i] = "ID "
-									+ t.getIdTurno() + " - " + t.getFechaHora().toInstant()
-											.atZone(ZoneId.systemDefault()).toLocalDateTime().format(fmt)
-									+ " | Estado: " + t.getEstado();
-						}
-
-						String elegido = (String) JOptionPane.showInputDialog(null, "Selecciona el turno a cancelar:",
-								"Cancelar turno", JOptionPane.PLAIN_MESSAGE, null, opciones, opciones[0]);
-
-						if (elegido == null)
-							break;
-
-						long idSeleccionado = Long.parseLong(elegido.split(" ")[1]);
-						cp.cancelarTurno(idSeleccionado);
-						JOptionPane.showMessageDialog(null, "Turno cancelado correctamente.");
 					}
 
 					case "Confirmar asistencia" -> {
-						// turnos que se pueden confirmar
-						var turnos = cp.turnosActivos().stream()
-								.filter(t -> "Reservado".equalsIgnoreCase(t.getEstado())).toList();
+						try {
+							var turnos = cp.turnosActivos().stream()
+									.filter(t -> "Reservado".equalsIgnoreCase(t.getEstado())).toList();
 
-						if (turnos.isEmpty()) {
-							JOptionPane.showMessageDialog(null, "No hay turnos pendientes de confirmación");
-							break;
+							if (turnos.isEmpty()) {
+								JOptionPane.showMessageDialog(null, "No hay turnos pendientes de confirmación");
+								break;
+							}
+
+							java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter
+									.ofPattern("dd/MM/yyyy HH:mm");
+							String[] opciones = turnos.stream()
+									.map(t -> "ID " + t.getIdTurno() + " - " + t.getFechaHora().toInstant()
+											.atZone(java.time.ZoneId.systemDefault()).toLocalDateTime().format(fmt))
+									.toArray(String[]::new);
+
+							String seleccion = (String) JOptionPane.showInputDialog(null, "Selecciona turno:",
+									"Confirmar asistencia", JOptionPane.PLAIN_MESSAGE, null, opciones, opciones[0]);
+
+							if (seleccion == null)
+								break;
+
+							long idTurno = Long.parseLong(seleccion.split(" ")[1]);
+							cp.confirmarAsistencia(idTurno);
+							JOptionPane.showMessageDialog(null, "Asistencia confirmada.");
+						} catch (IllegalStateException ex) {
+							JOptionPane.showMessageDialog(null, ex.getMessage());
 						}
-
-						DateTimeFormatter fmt = DateTimeFormatter.ofPattern("EEEE dd 'de' MMMM yyyy, HH:mm",
-								Locale.forLanguageTag("es-AR"));
-
-						String[] opciones = turnos.stream()
-								.map(t -> "ID "
-										+ t.getIdTurno() + " - " + t.getFechaHora().toInstant()
-												.atZone(ZoneId.systemDefault()).toLocalDateTime().format(fmt)
-										+ " | Estado: " + t.getEstado())
-								.toArray(String[]::new);
-
-						String seleccion = (String) JOptionPane.showInputDialog(null, "Selecciona turno para confirmar",
-								"Confirmar asistencia", JOptionPane.PLAIN_MESSAGE, null, opciones, opciones[0]);
-
-						if (seleccion == null)
-							break;
-
-						long idTurno = Long.parseLong(seleccion.split(" ")[1]);
-						cp.confirmarAsistencia(idTurno);
-						JOptionPane.showMessageDialog(null, "Asistencia confirmada.");
 					}
 
 					case "Agregar a favoritos" -> {
@@ -358,18 +365,19 @@ public class Main {
 					}
 
 					case "Ver favoritos" -> {
-						var favs = cp.verFavoritos();
-						if (favs.isEmpty()) {
-							JOptionPane.showMessageDialog(null, "Sin favoritos");
-						} else {
+						try {
+							var favs = cp.verFavoritos();
 							StringBuilder sb = new StringBuilder("Favoritos:\n");
 							favs.forEach(m -> sb.append("- ").append(m.getNombre()).append(" ").append(m.getApellido())
 									.append(" (").append(m.getEspecialidad()).append(")\n"));
 							JTextArea ta = new JTextArea(sb.toString());
 							ta.setEditable(false);
 							JOptionPane.showMessageDialog(null, new JScrollPane(ta));
+						} catch (IllegalStateException ex) {
+							JOptionPane.showMessageDialog(null, ex.getMessage());
 						}
 					}
+
 					case "Ver recomendaciones" -> {
 						var recs = cp.mostrarRecomendaciones();
 						StringBuilder sb = new StringBuilder("Recomendaciones:\n");
@@ -379,12 +387,13 @@ public class Main {
 						ta.setEditable(false);
 						JOptionPane.showMessageDialog(null, new JScrollPane(ta));
 					}
+
 					}
 				} catch (Exception e) {
 					JOptionPane.showMessageDialog(null, "Error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+					e.printStackTrace();
 				}
 			}
-
 		} else if (u instanceof Medico m) {
 			ControllerMedico cm = new ControllerMedico(m);
 
@@ -919,8 +928,7 @@ public class Main {
 			ControllerAdministrador ca = new ControllerAdministrador(a);
 			String[] ops = { "Alta de paciente", "Modificar datos de paciente", "Alta de médico",
 					"Modificar datos de médico", "Listar usuarios", "Resetear contraseña de usuario",
-					"Eliminar usuario", "Bloquear usuario",
-					"Desbloquear usuario", "Salir" };
+					"Eliminar usuario", "Bloquear usuario", "Desbloquear usuario", "Salir" };
 
 			boolean salir = false;
 			while (!salir) {
@@ -936,12 +944,12 @@ public class Main {
 				try {
 					switch (op) {
 					// alta paciente ----------------
-					
+
 					case "Alta de paciente" -> {
 						String usr, nom, ape, pass, nro, os;
 
 						// Usuario
-						
+
 						while (true) {
 							usr = JOptionPane.showInputDialog("Usuario:");
 							if (usr == null)
@@ -954,7 +962,7 @@ public class Main {
 							continue;
 
 						// Nombre
-						
+
 						while (true) {
 							nom = JOptionPane.showInputDialog("Nombre:");
 							if (nom == null)
@@ -967,7 +975,7 @@ public class Main {
 							continue;
 
 						// Apellido
-						
+
 						while (true) {
 							ape = JOptionPane.showInputDialog("Apellido:");
 							if (ape == null)
@@ -980,7 +988,7 @@ public class Main {
 							continue;
 
 						// Contraseña
-						
+
 						while (true) {
 							pass = JOptionPane.showInputDialog("Contraseña:");
 							if (pass == null)
@@ -993,7 +1001,7 @@ public class Main {
 							continue;
 
 						// contrato
-						
+
 						while (true) {
 							nro = JOptionPane.showInputDialog("Número de contrato:");
 							if (nro == null)
@@ -1006,7 +1014,7 @@ public class Main {
 							continue;
 
 						// Obra social
-						
+
 						while (true) {
 							os = JOptionPane.showInputDialog("Obra social:");
 							if (os == null)
@@ -1024,12 +1032,12 @@ public class Main {
 					}
 
 					// modificar paciente ----------------
-					
+
 					case "Modificar datos de paciente" -> {
 						String usr, nom, ape, pass, nro, os;
 
 						// Usr a modificar
-						
+
 						while (true) {
 							usr = JOptionPane.showInputDialog("Usuario del paciente a modificar:");
 							if (usr == null)
@@ -1042,7 +1050,7 @@ public class Main {
 							continue;
 
 						// Nombre
-						
+
 						while (true) {
 							nom = JOptionPane.showInputDialog("Nuevo nombre:");
 							if (nom == null)
@@ -1055,7 +1063,7 @@ public class Main {
 							continue;
 
 						// Apellido
-						
+
 						while (true) {
 							ape = JOptionPane.showInputDialog("Nuevo apellido:");
 							if (ape == null)
@@ -1068,7 +1076,7 @@ public class Main {
 							continue;
 
 						// Contraseña
-						
+
 						while (true) {
 							pass = JOptionPane.showInputDialog("Nueva contraseña:");
 							if (pass == null)
@@ -1081,7 +1089,7 @@ public class Main {
 							continue;
 
 						// Número de contrato
-						
+
 						while (true) {
 							nro = JOptionPane.showInputDialog("Nuevo número de contrato:");
 							if (nro == null)
@@ -1094,7 +1102,7 @@ public class Main {
 							continue;
 
 						// Obra social
-						
+
 						while (true) {
 							os = JOptionPane.showInputDialog("Nueva obra social:");
 							if (os == null)
@@ -1112,7 +1120,7 @@ public class Main {
 					}
 
 					// alta medico ----------------
-					
+
 					case "Alta de médico" -> {
 						String usr, nom, ape, pass, matricula, esp;
 
@@ -1188,7 +1196,7 @@ public class Main {
 					}
 
 					// modificar medico ----------------
-					
+
 					case "Modificar datos de médico" -> {
 						String usr, nom, ape, pass, matricula, esp;
 
@@ -1264,8 +1272,7 @@ public class Main {
 					}
 
 					// listar usuarios ----------------
-					
-					
+
 					case "Listar usuarios" -> {
 						String rol = JOptionPane.showInputDialog("Ingrese rol a listar (Paciente o Medico):");
 						if (rol == null)
@@ -1283,7 +1290,7 @@ public class Main {
 					}
 
 					// bloquear usuario ----------------
-					
+
 					case "Bloquear usuario" -> {
 						String usr;
 						while (true) {
@@ -1302,7 +1309,7 @@ public class Main {
 					}
 
 					// desbloquear usuario ----------------
-					
+
 					case "Desbloquear usuario" -> {
 						String usr;
 						while (true) {
@@ -1319,35 +1326,40 @@ public class Main {
 						ca.desbloquearUsuario(usr.trim());
 						JOptionPane.showMessageDialog(null, "Usuario desbloqueado exitosamente");
 					}
-					
+
 					// resetear pass ----------------
-					
+
 					case "Resetear contraseña de usuario" -> {
-					    String usr, nuevaPass;
+						String usr, nuevaPass;
 
-					    while (true) {
-					        usr = JOptionPane.showInputDialog("Usuario a resetear contraseña:");
-					        if (usr == null) break;
-					        if (!usr.trim().isEmpty()) break;
-					        JOptionPane.showMessageDialog(null, "Ingrese el usuario.");
-					    }
-					    if (usr == null) continue;
+						while (true) {
+							usr = JOptionPane.showInputDialog("Usuario a resetear contraseña:");
+							if (usr == null)
+								break;
+							if (!usr.trim().isEmpty())
+								break;
+							JOptionPane.showMessageDialog(null, "Ingrese el usuario.");
+						}
+						if (usr == null)
+							continue;
 
-					    while (true) {
-					        nuevaPass = JOptionPane.showInputDialog("Nueva contraseña para el usuario:");
-					        if (nuevaPass == null) break;
-					        if (!nuevaPass.trim().isEmpty()) break;
-					        JOptionPane.showMessageDialog(null, "La contraseña no puede estar vacía.");
-					    }
-					    if (nuevaPass == null) continue;
+						while (true) {
+							nuevaPass = JOptionPane.showInputDialog("Nueva contraseña para el usuario:");
+							if (nuevaPass == null)
+								break;
+							if (!nuevaPass.trim().isEmpty())
+								break;
+							JOptionPane.showMessageDialog(null, "La contraseña no puede estar vacía.");
+						}
+						if (nuevaPass == null)
+							continue;
 
-					    ca.resetearContrasenia(usr.trim(), nuevaPass.trim());
-					    JOptionPane.showMessageDialog(null, "Contraseña reseteada exitosamente.");
+						ca.resetearContrasenia(usr.trim(), nuevaPass.trim());
+						JOptionPane.showMessageDialog(null, "Contraseña reseteada exitosamente.");
 					}
 
-
 					// eliminar usuario ----------------
-					
+
 					case "Eliminar usuario" -> {
 						String usr;
 						while (true) {

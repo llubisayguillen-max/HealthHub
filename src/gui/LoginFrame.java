@@ -9,6 +9,7 @@ import dll.ControllerUsuario;
 import dll.ControllerAdministrador;
 import bll.Usuario;
 import bll.Administrador;
+import bll.Paciente;
 import bll.Medico;
 
 import static gui.UiPaleta.*;
@@ -162,8 +163,8 @@ public class LoginFrame extends JFrame {
 		add(leftPanel, BorderLayout.WEST);
 		add(rightPanel, BorderLayout.CENTER);
 	}
-	
-	//Login
+
+	// Login
 	private void iniciarSesion() {
 		String usuario = txtUsuario.getText().trim();
 		String pass = new String(txtPassword.getPassword()).trim();
@@ -198,20 +199,22 @@ public class LoginFrame extends JFrame {
 				Medico med = (Medico) u;
 				new MenuMedicoFrame(med).setVisible(true);
 			}
+			case "Paciente" -> {
+				Paciente pac = (Paciente) u;
+				new MenuPacienteFrame(pac).setVisible(true);
+			}
 			default -> {
 				mostrarError("Inicio de sesión", "No se reconoce el rol del usuario.");
 				return;
 			}
 			}
 
-			dispose();
-
 		} catch (Exception ex) {
 			mostrarError("Error", ex.getMessage());
 		}
 	}
-	
-	//Pop-up
+
+	// Pop-up
 
 	private void mostrarInfo(String titulo, String mensaje) {
 		mostrarDialogoMensaje(titulo, mensaje, COLOR_ACCENT);
