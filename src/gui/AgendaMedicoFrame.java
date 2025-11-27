@@ -187,17 +187,22 @@ public class AgendaMedicoFrame extends JFrame {
 		RoundedButton btnConsulta = new RoundedButton("Registrar consulta");
 		estiloBotonAccion(btnConsulta, COLOR_ACCENT);
 
+		RoundedButton btnHistorial = new RoundedButton("Ver historial");
+		estiloBotonAccion(btnHistorial, COLOR_ACCENT);
+
 		RoundedButton btnCancelar = new RoundedButton("Cancelar turno");
 		estiloBotonAccion(btnCancelar, COLOR_DANGER);
 
 		btnConfirmar.addActionListener(e -> confirmarTurnoSeleccionado());
 		btnReprogramar.addActionListener(e -> reprogramarTurnoSeleccionado());
 		btnConsulta.addActionListener(e -> registrarConsultaTurnoSeleccionado());
+		btnHistorial.addActionListener(e -> verHistorialPacienteSeleccionado());
 		btnCancelar.addActionListener(e -> cancelarTurnoSeleccionado());
 
 		panelAcciones.add(btnConfirmar);
 		panelAcciones.add(btnReprogramar);
 		panelAcciones.add(btnConsulta);
+		panelAcciones.add(btnHistorial);
 		panelAcciones.add(btnCancelar);
 
 		centerWrapper.add(panelAcciones, BorderLayout.SOUTH);
@@ -612,7 +617,102 @@ public class AgendaMedicoFrame extends JFrame {
 		dlg.setVisible(true);
 	}
 
-	// Pop up de confirmación
+	private void verHistorialPacienteSeleccionado() {
+		String usuarioPac = getUsuarioPacienteSeleccionado();
+		if (usuarioPac == null || usuarioPac.isBlank()) {
+			mostrarInfo("Historial", "No se pudo identificar al paciente del turno seleccionado");
+			return;
+		}
+
+		try {
+			java.util.List<ControllerMedico.ConsultaItem> consultas = controllerMedico
+					.obtenerConsultasPaciente(usuarioPac);
+
+			if (consultas.isEmpty()) {
+				mostrarInfo("Historial", "El paciente no tiene consultas registradas con este médico");
+				return;
+			}
+
+			JDialog dlg = new JDialog(this, "Historial de consultas", true);
+			dlg.setSize(780, 420);
+			dlg.setLocationRelativeTo(this);
+			dlg.setLayout(new BorderLayout());
+			dlg.getContentPane().setBackground(COLOR_BACKGROUND);
+
+			// Header
+			JPanel header = new JPanel(new BorderLayout());
+			header.setBackground(COLOR_PRIMARY);
+			header.setBorder(BorderFactory.createEmptyBorder(10, 16, 10, 16));
+			JLabel lblTitulo = new JLabel("Historial de consultas del paciente");
+			lblTitulo.setForeground(Color.WHITE);
+			lblTitulo.setFont(H2_SECTION);
+			header.add(lblTitulo, BorderLayout.WEST);
+			dlg.add(header, BorderLayout.NORTH);
+
+			// Tabla
+			String[] columnas = { "Fecha", "Motivo", "Diagnóstico", "Tratamiento", "Recomendaciones" };
+			DefaultTableModel model = new DefaultTableModel(columnas, 0) {
+				@Override
+				public boolean isCellEditable(int row, int column) {
+					return false;
+				}
+			};
+
+			DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+			for (ControllerMedico.ConsultaItem c : consultas) {
+				String fechaStr = c.fecha() != null ? c.fecha().format(fmt) : "";
+				model.addRow(new Object[] { fechaStr, c.motivo(), c.diagnostico(), c.tratamiento(), c.seguimiento() });
+			}
+
+			JTable tablaHist = new JTable(model);
+			tablaHist.setRowHeight(24);
+			tablaHist.setFont(BODY_SMALL);
+			tablaHist.getTableHeader().setFont(BODY);
+			tablaHist.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+
+			// Anchos de columna 
+			tablaHist.getColumnModel().getColumn(0).setPreferredWidth(130); // fecha
+			tablaHist.getColumnModel().getColumn(1).setPreferredWidth(180); // motivo
+			tablaHist.getColumnModel().getColumn(2).setPreferredWidth(180); // diag
+			tablaHist.getColumnModel().getColumn(3).setPreferredWidth(180); // trat
+			tablaHist.getColumnModel().getColumn(4).setPreferredWidth(200); // recos
+
+			JScrollPane scroll = new JScrollPane(tablaHist);
+			scroll.getViewport().setBackground(Color.WHITE);
+
+			JPanel center = new JPanel(new BorderLayout());
+			center.setBackground(COLOR_BACKGROUND);
+			center.setBorder(BorderFactory.createEmptyBorder(10, 16, 10, 16));
+			center.add(scroll, BorderLayout.CENTER);
+
+			dlg.add(center, BorderLayout.CENTER);
+
+			// Footer 
+			JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
+			footer.setBackground(COLOR_BACKGROUND);
+			footer.setBorder(BorderFactory.createEmptyBorder(0, 16, 12, 16));
+
+			RoundedButton btnCerrar = new RoundedButton("Cerrar");
+			btnCerrar.setBackground(Color.WHITE);
+			btnCerrar.setForeground(COLOR_PRIMARY);
+			btnCerrar.setFont(BUTTON);
+			btnCerrar.setBorder(BorderFactory.createLineBorder(COLOR_PRIMARY, 1, true));
+			btnCerrar.setFocusPainted(false);
+			btnCerrar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+			btnCerrar.addActionListener(e -> dlg.dispose());
+
+			footer.add(btnCerrar);
+			dlg.add(footer, BorderLayout.SOUTH);
+
+			dlg.setVisible(true);
+
+		} catch (Exception ex) {
+			mostrarError("Historial", "Error al obtener el historial: " + ex.getMessage());
+		}
+	}
+
+	// Pop up 
 	private boolean mostrarDialogoConfirmacion(String titulo, String mensaje) {
 		final boolean[] resultado = { false };
 
@@ -671,11 +771,11 @@ public class AgendaMedicoFrame extends JFrame {
 	}
 
 	private void mostrarInfo(String titulo, String mensaje) {
-	    mostrarDialogoMensaje(titulo, mensaje, COLOR_ACCENT);
+		mostrarDialogoMensaje(titulo, mensaje, COLOR_ACCENT);
 	}
 
 	private void mostrarError(String titulo, String mensaje) {
-	    mostrarDialogoMensaje(titulo, mensaje, COLOR_DANGER);
+		mostrarDialogoMensaje(titulo, mensaje, COLOR_DANGER);
 	}
 
 	private void mostrarDialogoMensaje(String titulo, String mensaje, Color buttonBg) {
