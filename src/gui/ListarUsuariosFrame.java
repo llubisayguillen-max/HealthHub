@@ -69,29 +69,6 @@ public class ListarUsuariosFrame extends JFrame {
         wrapperCenter.add(center, BorderLayout.CENTER);
         add(wrapperCenter, BorderLayout.CENTER);
 
-        //footer
-        JPanel footer = new JPanel(new BorderLayout());
-        footer.setBackground(COLOR_BACKGROUND);
-        footer.setBorder(BorderFactory.createEmptyBorder(0, 40, 20, 40));
-
-        RoundedButton btnVolver = new RoundedButton("Volver al Menú");
-        btnVolver.setBackground(COLOR_ACCENT);
-        btnVolver.setForeground(Color.WHITE);
-        btnVolver.setFont(new Font(UI_FONT, Font.PLAIN, 13));
-        btnVolver.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnVolver.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
-
-        btnVolver.addActionListener(e -> {
-            dispose();
-            new MenuAdministradorFrame(controller, admin).setVisible(true);
-        });
-
-        JPanel rightFooter = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-        rightFooter.setOpaque(false);
-        rightFooter.add(btnVolver);
-
-        footer.add(rightFooter, BorderLayout.EAST);
-        add(footer, BorderLayout.SOUTH);
     }
 
     //tabla

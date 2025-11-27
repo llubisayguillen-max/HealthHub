@@ -2,28 +2,36 @@ package gui;
 
 import bll.HistorialMedico;
 import bll.Paciente;
+import bll.Medico;
 import dll.ControllerHistorial;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+
+import static gui.UiPaleta.*;
 
 public class VerHistorialPacienteFrame extends JFrame {
 
     private final Paciente paciente;
     private final ControllerHistorial historialManager;
+
     private JTable tablaHistorial;
     private DefaultTableModel modeloTabla;
+
+    private static final String UI_FONT = "Segoe UI";
 
     public VerHistorialPacienteFrame(Paciente paciente, ControllerHistorial historialManager) {
         this.paciente = paciente;
         this.historialManager = historialManager;
 
-        setTitle("Historial Médico de: " + paciente.getNombre());
-        setSize(600, 400);
+        setTitle("Historial Médico de: " + paciente.getNombre() + " " + paciente.getApellido());
+        setSize(700, 500);
         setLocationRelativeTo(null);
+        setResizable(false);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
         initUI();
@@ -31,9 +39,40 @@ public class VerHistorialPacienteFrame extends JFrame {
     }
 
     private void initUI() {
-        JPanel panelPrincipal = new JPanel(new BorderLayout());
-        panelPrincipal.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        getContentPane().setBackground(COLOR_BACKGROUND);
+        setLayout(new BorderLayout());
 
+        //Top Bar
+        JPanel topBar = new JPanel(new BorderLayout());
+        topBar.setBackground(COLOR_PRIMARY);
+        topBar.setPreferredSize(new Dimension(getWidth(), 85));
+        topBar.setBorder(BorderFactory.createEmptyBorder(10, 40, 15, 40));
+
+        JLabel lblTitulo = new JLabel("Historial de " + paciente.getNombre() + " " + paciente.getApellido());
+        lblTitulo.setForeground(Color.WHITE);
+        lblTitulo.setFont(new Font(UI_FONT, Font.BOLD, 24));
+
+        topBar.add(lblTitulo, BorderLayout.WEST);
+        add(topBar, BorderLayout.NORTH);
+
+        //Card con tabla
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setOpaque(false);
+        wrapper.setBorder(BorderFactory.createEmptyBorder(20, 32, 20, 32));
+
+        RoundedCardPanel card = new RoundedCardPanel(16);
+        card.setBackground(COLOR_CARD_BG);
+        card.setBorderColor(COLOR_CARD_BORDER);
+        card.setLayout(new BorderLayout());
+        card.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
+
+        JLabel lblSubtitulo = new JLabel("Registros Médicos");
+        lblSubtitulo.setFont(new Font(UI_FONT, Font.BOLD, 17));
+        lblSubtitulo.setForeground(MINT_DARK);
+        lblSubtitulo.setBorder(BorderFactory.createEmptyBorder(8, 0, 15, 0));
+        card.add(lblSubtitulo, BorderLayout.NORTH);
+
+        // Tabla
         modeloTabla = new DefaultTableModel(
                 new Object[]{"Fecha", "Observaciones", "Médico"}, 0
         ) {
@@ -44,26 +83,50 @@ public class VerHistorialPacienteFrame extends JFrame {
         };
 
         tablaHistorial = new JTable(modeloTabla);
-        tablaHistorial.setFillsViewportHeight(true);
+        estilizarTabla(tablaHistorial);
 
         JScrollPane scroll = new JScrollPane(tablaHistorial);
-        panelPrincipal.add(scroll, BorderLayout.CENTER);
+        card.add(scroll, BorderLayout.CENTER);
 
-        JButton btnCerrar = new JButton("Cerrar");
+        wrapper.add(card, BorderLayout.CENTER);
+        add(wrapper, BorderLayout.CENTER);
+
+        //Footer
+        JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        footer.setBackground(COLOR_BACKGROUND);
+        footer.setBorder(BorderFactory.createEmptyBorder(10, 40, 20, 40));
+
+        RoundedButton btnCerrar = new RoundedButton("Cerrar");
+        btnCerrar.setBackground(COLOR_ACCENT);
+        btnCerrar.setForeground(Color.WHITE);
+        btnCerrar.setFont(new Font(UI_FONT, Font.PLAIN, 13));
+        btnCerrar.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnCerrar.addActionListener(e -> dispose());
 
-        JPanel panelBoton = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        panelBoton.add(btnCerrar);
-        panelPrincipal.add(panelBoton, BorderLayout.SOUTH);
+        footer.add(btnCerrar);
+        add(footer, BorderLayout.SOUTH);
+    }
 
-        setContentPane(panelPrincipal);
+    private void estilizarTabla(JTable tabla) {
+        tabla.setFont(new Font(UI_FONT, Font.PLAIN, 14));
+        tabla.setRowHeight(28);
+        tabla.setShowVerticalLines(false);
+        tabla.setGridColor(new Color(220, 220, 220));
+
+        JTableHeader header = tabla.getTableHeader();
+        header.setBackground(COLOR_ACCENT);
+        header.setForeground(Color.WHITE);
+        header.setFont(new Font(UI_FONT, Font.BOLD, 15));
+        header.setOpaque(true);
+
+        tabla.setSelectionBackground(MINT_DARK);
+        tabla.setSelectionForeground(Color.WHITE);
     }
 
     private void cargarHistorial() {
         modeloTabla.setRowCount(0);
 
-        List<HistorialMedico> registros =
-                historialManager.listarPorPaciente(paciente.getUsuario());
+        List<HistorialMedico> registros = historialManager.listarPorPaciente(paciente.getUsuario());
 
         if (registros == null || registros.isEmpty()) {
             JOptionPane.showMessageDialog(this,
@@ -74,11 +137,42 @@ public class VerHistorialPacienteFrame extends JFrame {
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
         for (HistorialMedico h : registros) {
+            String nombreMedico = "N/A";
+            if (h.getMedico() != null) {
+                nombreMedico = h.getMedico().getNombre() + " " + h.getMedico().getApellido();
+            }
+
             modeloTabla.addRow(new Object[]{
                     h.getFechaCreacion().format(fmt),
                     h.getObservaciones(),
-                    h.getMedico() != null ? h.getMedico().getNombre() : "N/A"
+                    nombreMedico
             });
+        }
+    }
+
+
+    private static class RoundedCardPanel extends JPanel {
+        private final int radius;
+        private Color borderColor;
+
+        public RoundedCardPanel(int radius) {
+            this.radius = radius;
+            this.borderColor = new Color(200, 200, 200);
+            setOpaque(false);
+        }
+
+        public void setBorderColor(Color c) { this.borderColor = c; }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            g2.setColor(getBackground());
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
+
+            g2.setColor(borderColor);
+            g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, radius, radius);
         }
     }
 }
