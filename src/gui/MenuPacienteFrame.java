@@ -29,7 +29,6 @@ public class MenuPacienteFrame extends JFrame {
 		getContentPane().setBackground(COLOR_BACKGROUND);
 		setLayout(new BorderLayout());
 
-		// ---------- HEADER ----------
 		JPanel topBar = new JPanel(new BorderLayout());
 		topBar.setBackground(COLOR_PRIMARY);
 		topBar.setPreferredSize(new Dimension(getWidth(), 90));
@@ -41,8 +40,12 @@ public class MenuPacienteFrame extends JFrame {
 
 		String nombreCompleto = paciente.getNombre() + " " + paciente.getApellido();
 
+		String obraSocial = (paciente.getObraSocial() != null && !paciente.getObraSocial().isBlank())
+				? paciente.getObraSocial()
+				: "Particular";
+
 		JLabel lblNombre = new JLabel(
-				"Paciente: " + capitalizarNombre(nombreCompleto) + "  |  Nro. Contrato: " + paciente.getNroContrato());
+				"Paciente: " + capitalizarNombre(nombreCompleto) + "  |  Obra Social: " + obraSocial);
 		lblNombre.setForeground(new Color(230, 245, 255));
 		lblNombre.setFont(BODY);
 
@@ -56,7 +59,6 @@ public class MenuPacienteFrame extends JFrame {
 		topBar.add(info, BorderLayout.WEST);
 		add(topBar, BorderLayout.NORTH);
 
-		// ---------- TARJETAS DE FUNCIONALIDAD ----------
 		JPanel wrapperCenter = new JPanel(new BorderLayout());
 		wrapperCenter.setOpaque(false);
 		wrapperCenter.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
@@ -65,24 +67,28 @@ public class MenuPacienteFrame extends JFrame {
 		center.setOpaque(false);
 		center.setLayout(new BoxLayout(center, BoxLayout.X_AXIS));
 
+		// Card 1: Gestión de Turnos
 		JPanel cardTurnos = crearCard("Gestión de Turnos", "/gui/img/TurnosMed.png",
 				"Solicitá, visualizá y cancelá turnos", "Gestionar mis citas", "Ver mis Turnos", () -> {
 					new GestionTurnosPacienteFrame(paciente).setVisible(true);
 					dispose();
 				});
 
+		// Card 2: Disponibilidad y Médicos
 		JPanel cardMedicos = crearCard("Buscar Médicos", "/gui/img/gestionMedicos.png",
 				"Buscá por especialidad y horarios", "Encontrá tu especialista", "Ver Disponibilidad", () -> {
 					new DisponibilidadMedicoPacienteFrame(paciente).setVisible(true);
 					dispose();
 				});
 
+		// Card 3: Favoritos y Recomendaciones
 		JPanel cardFavoritos = crearCard("Mis Favoritos", "/gui/img/gestionPacientes.png",
 				"Médicos guardados y recomendaciones", "Accesos rápidos", "Ver Favoritos", () -> {
 					new FavoritosPacienteFrame(paciente).setVisible(true);
 					dispose();
 				});
 
+		// Cards con espaciado
 		center.add(Box.createHorizontalGlue());
 		center.add(cardTurnos);
 		center.add(Box.createHorizontalStrut(20));
@@ -94,7 +100,6 @@ public class MenuPacienteFrame extends JFrame {
 		wrapperCenter.add(center, BorderLayout.CENTER);
 		add(wrapperCenter, BorderLayout.CENTER);
 
-		// ---------- FOOTER ----------
 		JPanel footer = new JPanel(new BorderLayout());
 		footer.setBackground(COLOR_BACKGROUND);
 		footer.setBorder(BorderFactory.createEmptyBorder(0, 40, 20, 40));

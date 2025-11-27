@@ -1,243 +1,329 @@
 package gui;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
+
+import com.toedter.calendar.JDateChooser;
+
 import java.awt.*;
-import java.text.SimpleDateFormat;
-import java.util.*;
+import java.awt.event.ActionEvent;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
-import bll.Medico;
 import bll.Paciente;
 import dll.ControllerPaciente;
+import dll.ControllerPaciente.TurnoDisponible;
+
+import static gui.UiPaleta.*;
+import static gui.UiFonts.*;
 
 public class NuevoTurnoPacienteFrame extends JFrame {
 
-	private static final long serialVersionUID = 1L;
+	private final Paciente paciente;
+	private final ControllerPaciente controllerPaciente;
 
-	private Paciente pacienteLogueado;
-	private ControllerPaciente controllerPaciente;
-	private GestionTurnosPacienteFrame gestionTurnosPadre;
+	private JComboBox<String> cmbEspecialidad;
+	// CAMBIO: Dos selectores de fecha en lugar de uno
+	private JDateChooser dcDesde;
+	private JDateChooser dcHasta;
 
-	private JComboBox<String> comboEspecialidad;
-	private JComboBox<String> comboMedico;
-	private JComboBox<String> comboFecha;
-	private JComboBox<String> comboHora;
-	private JButton btnReservar;
+	private JTable tablaTurnosDisponibles;
+	private DefaultTableModel modeloTabla;
+	private List<TurnoDisponible> resultadosBusqueda;
 
-	private List<Medico> medicosFiltrados = new ArrayList<>();
-	// Guarda fechas reales
-	private Map<String, List<Date>> fechasDisponiblesPorMedico = new HashMap<>();
+	private static final DateTimeFormatter F_DDMMYYYY = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-	// Formato de fecha y hora para mostrar
-	private final SimpleDateFormat formatoDisplay = new SimpleDateFormat("EEEE dd 'de' MMMM yyyy",
-			new Locale("es", "AR"));
-	private final SimpleDateFormat formatoHora = new SimpleDateFormat("HH:mm");
-	private final SimpleDateFormat formatoInternoFecha = new SimpleDateFormat("yyyy-MM-dd");
+	public NuevoTurnoPacienteFrame(Paciente paciente) {
+		this.paciente = paciente;
+		this.controllerPaciente = new ControllerPaciente(paciente);
+		this.resultadosBusqueda = new ArrayList<>();
 
-	public NuevoTurnoPacienteFrame(Paciente pacienteLogueado, GestionTurnosPacienteFrame gestionTurnosPadre) {
-		this.pacienteLogueado = pacienteLogueado;
-		this.gestionTurnosPadre = gestionTurnosPadre;
-		this.controllerPaciente = new ControllerPaciente(pacienteLogueado);
-
-		setTitle("Nuevo Turno - " + pacienteLogueado.getNombre());
-		setSize(600, 400);
+		setTitle("HealthHub - Nuevo Turno");
+		setSize(900, 650);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLocationRelativeTo(null);
-		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		setResizable(false);
+
+		initUI();
+		initDefaultValues();
+		cargarEspecialidades();
+	}
+
+	private void initUI() {
+		getContentPane().setBackground(COLOR_BACKGROUND);
 		setLayout(new BorderLayout());
 
-		JPanel panelPrincipal = new JPanel(new GridBagLayout());
-		panelPrincipal.setBackground(Color.WHITE);
-		GridBagConstraints gbc = new GridBagConstraints();
-		gbc.insets = new Insets(10, 20, 10, 20);
-		gbc.fill = GridBagConstraints.HORIZONTAL;
+		JPanel header = new JPanel(new BorderLayout());
+		header.setBackground(COLOR_PRIMARY);
+		header.setPreferredSize(new Dimension(getWidth(), 80));
+		header.setBorder(BorderFactory.createEmptyBorder(10, 24, 10, 24));
+
+		JLabel lblTitulo = new JLabel("Solicitar nuevo turno");
+		lblTitulo.setForeground(Color.WHITE);
+		lblTitulo.setFont(H1_APP);
+
+		JLabel lblSub = new JLabel("Búsqueda por especialidad y rango de fechas");
+		lblSub.setForeground(new Color(220, 235, 245));
+		lblSub.setFont(BODY_SMALL);
+
+		JPanel leftHeader = new JPanel();
+		leftHeader.setOpaque(false);
+		leftHeader.setLayout(new BoxLayout(leftHeader, BoxLayout.Y_AXIS));
+		leftHeader.add(lblTitulo);
+		leftHeader.add(Box.createVerticalStrut(3));
+		leftHeader.add(lblSub);
+
+		header.add(leftHeader, BorderLayout.WEST);
+
+		RoundedButton btnVolverHeader = new RoundedButton("Volver");
+		btnVolverHeader.setBackground(COLOR_PRIMARY);
+		btnVolverHeader.setForeground(Color.WHITE);
+		btnVolverHeader.setFont(BUTTON);
+		btnVolverHeader.setFocusPainted(false);
+
+		btnVolverHeader.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createLineBorder(new Color(255, 255, 255, 200), 1, true),
+				BorderFactory.createEmptyBorder(6, 16, 6, 16)));
+
+		btnVolverHeader.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+		// Hover
+		btnVolverHeader.addMouseListener(new java.awt.event.MouseAdapter() {
+			public void mouseEntered(java.awt.event.MouseEvent evt) {
+
+				btnVolverHeader.setBackground(new Color(40, 140, 190));
+			}
+
+			public void mouseExited(java.awt.event.MouseEvent evt) {
+
+				btnVolverHeader.setBackground(COLOR_PRIMARY);
+			}
+		});
+
+		btnVolverHeader.addActionListener(e -> {
+			new GestionTurnosPacienteFrame(paciente).setVisible(true);
+			dispose();
+		});
+
+		JPanel rightHeader = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+		rightHeader.setOpaque(false);
+		rightHeader.add(btnVolverHeader);
+
+		header.add(rightHeader, BorderLayout.EAST);
+
+		JPanel filtros = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
+		filtros.setBackground(Color.WHITE);
+		filtros.setBorder(BorderFactory.createEmptyBorder(0, 40, 5, 40));
 
 		JLabel lblEspecialidad = new JLabel("Especialidad:");
-		gbc.gridx = 0;
-		gbc.gridy = 0;
-		panelPrincipal.add(lblEspecialidad, gbc);
+		lblEspecialidad.setFont(BODY_SMALL);
+		filtros.add(lblEspecialidad);
 
-		comboEspecialidad = new JComboBox<>(controllerPaciente.obtenerEspecialidades());
-		gbc.gridx = 1;
-		gbc.gridy = 0;
-		panelPrincipal.add(comboEspecialidad, gbc);
+		cmbEspecialidad = new JComboBox<>();
+		cmbEspecialidad.setPreferredSize(new Dimension(150, 26));
+		filtros.add(cmbEspecialidad);
 
-		JLabel lblMedico = new JLabel("Médico:");
-		gbc.gridx = 0;
-		gbc.gridy = 1;
-		panelPrincipal.add(lblMedico, gbc);
+		JLabel lblDesde = new JLabel("Desde:");
+		lblDesde.setFont(BODY_SMALL);
+		filtros.add(lblDesde);
 
-		comboMedico = new JComboBox<>();
-		gbc.gridx = 1;
-		gbc.gridy = 1;
-		panelPrincipal.add(comboMedico, gbc);
+		dcDesde = new JDateChooser();
+		dcDesde.setDateFormatString("dd/MM/yyyy");
+		dcDesde.setPreferredSize(new Dimension(120, 26));
+		filtros.add(dcDesde);
 
-		JLabel lblFecha = new JLabel("Fecha:");
-		gbc.gridx = 0;
-		gbc.gridy = 2;
-		panelPrincipal.add(lblFecha, gbc);
+		JLabel lblHasta = new JLabel("Hasta:");
+		lblHasta.setFont(BODY_SMALL);
+		filtros.add(lblHasta);
 
-		comboFecha = new JComboBox<>();
-		gbc.gridx = 1;
-		gbc.gridy = 2;
-		panelPrincipal.add(comboFecha, gbc);
+		dcHasta = new JDateChooser();
+		dcHasta.setDateFormatString("dd/MM/yyyy");
+		dcHasta.setPreferredSize(new Dimension(120, 26));
+		filtros.add(dcHasta);
 
-		JLabel lblHora = new JLabel("Hora:");
-		gbc.gridx = 0;
-		gbc.gridy = 3;
-		panelPrincipal.add(lblHora, gbc);
+		RoundedButton btnBuscar = new RoundedButton("Buscar");
+		btnBuscar.setBackground(COLOR_ACCENT);
+		btnBuscar.setForeground(Color.WHITE);
+		btnBuscar.setFont(BUTTON);
+		btnBuscar.setFocusPainted(false);
+		btnBuscar.setBorder(BorderFactory.createEmptyBorder(6, 20, 6, 20));
+		btnBuscar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+		btnBuscar.addActionListener(this::onBuscarTurnos);
 
-		comboHora = new JComboBox<>();
-		gbc.gridx = 1;
-		gbc.gridy = 3;
-		panelPrincipal.add(comboHora, gbc);
+		filtros.add(btnBuscar);
 
-		btnReservar = new JButton("Reservar Turno");
-		btnReservar.setBackground(new Color(0, 102, 204));
-		btnReservar.setForeground(Color.WHITE);
-		btnReservar.setFont(new Font("Segoe UI", Font.BOLD, 15));
-		gbc.gridx = 0;
-		gbc.gridy = 4;
-		gbc.gridwidth = 2;
-		panelPrincipal.add(btnReservar, gbc);
+		JPanel topContainer = new JPanel(new BorderLayout());
+		topContainer.setOpaque(false);
+		topContainer.add(header, BorderLayout.NORTH);
+		topContainer.add(filtros, BorderLayout.SOUTH);
 
-		add(panelPrincipal, BorderLayout.CENTER);
+		add(topContainer, BorderLayout.NORTH);
 
-		// Listeners
-		comboEspecialidad.addActionListener(e -> cargarMedicos());
-		comboMedico.addActionListener(e -> cargarFechas());
-		comboFecha.addActionListener(e -> cargarHoras());
-		btnReservar.addActionListener(e -> reservarTurno());
+		JPanel centerWrapper = new JPanel(new BorderLayout());
+		centerWrapper.setBackground(COLOR_BACKGROUND);
+		centerWrapper.setBorder(BorderFactory.createEmptyBorder(10, 40, 10, 40));
 
-		if (comboEspecialidad.getItemCount() > 0)
-			comboEspecialidad.setSelectedIndex(0);
-		cargarMedicos();
-	}
+		String[] columnas = { "Médico", "Especialidad", "Fecha", "Hora Inicio", "idDisponibilidad" };
 
-	private void cargarMedicos() {
-		comboMedico.removeAllItems();
-		medicosFiltrados.clear();
-		fechasDisponiblesPorMedico.clear();
-		comboFecha.removeAllItems();
-		comboHora.removeAllItems();
-
-		String especialidad = (String) comboEspecialidad.getSelectedItem();
-		if (especialidad == null)
-			return;
-
-		medicosFiltrados = controllerPaciente.filtrarPorEspecialidad(especialidad);
-
-		for (Medico m : medicosFiltrados) {
-			comboMedico.addItem(m.getNombreCompleto());
-
-			// Cargar fechas disponibles internas
-			List<String> franjas = controllerPaciente.obtenerHorariosDisponibles(m.getUsuario());
-			Set<Date> fechasUnicas = new LinkedHashSet<>();
-			try {
-				for (String f : franjas) {
-					String fechaStr = f.split(" - ")[0].trim(); // Debe venir en formato yyyy-MM-dd
-					Date fecha = formatoInternoFecha.parse(fechaStr);
-					fechasUnicas.add(fecha);
-				}
-			} catch (Exception ex) {
-				ex.printStackTrace();
+		modeloTabla = new DefaultTableModel(columnas, 0) {
+			@Override
+			public boolean isCellEditable(int row, int column) {
+				return false;
 			}
-			fechasDisponiblesPorMedico.put(m.getUsuario(), new ArrayList<>(fechasUnicas));
-		}
+		};
 
-		if (comboMedico.getItemCount() > 0)
-			comboMedico.setSelectedIndex(0);
-		cargarFechas();
+		tablaTurnosDisponibles = new JTable(modeloTabla);
+		tablaTurnosDisponibles.setRowHeight(26);
+		tablaTurnosDisponibles.setFont(BODY_SMALL);
+		tablaTurnosDisponibles.getTableHeader().setFont(BODY);
+		tablaTurnosDisponibles.getTableHeader().setReorderingAllowed(false);
+		tablaTurnosDisponibles.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+		ocultarColumna(4); // Ocultar ID
+
+		JScrollPane scroll = new JScrollPane(tablaTurnosDisponibles);
+		scroll.getViewport().setBackground(Color.WHITE);
+
+		centerWrapper.add(scroll, BorderLayout.CENTER);
+
+		// Botones Footer
+		JPanel panelAcciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
+		panelAcciones.setOpaque(false);
+
+		RoundedButton btnReservar = new RoundedButton("Reservar turno seleccionado");
+		estiloBotonAccion(btnReservar, COLOR_ACCENT);
+		btnReservar.addActionListener(e -> reservarTurnoSeleccionado());
+
+		panelAcciones.add(btnReservar);
+		centerWrapper.add(panelAcciones, BorderLayout.SOUTH);
+
+		add(centerWrapper, BorderLayout.CENTER);
 	}
 
-	private void cargarFechas() {
-		comboFecha.removeAllItems();
-		comboHora.removeAllItems();
-
-		int idxMedico = comboMedico.getSelectedIndex();
-		if (idxMedico < 0)
-			return;
-
-		Medico medico = medicosFiltrados.get(idxMedico);
-		List<Date> fechas = fechasDisponiblesPorMedico.getOrDefault(medico.getUsuario(), new ArrayList<>());
-		for (Date f : fechas) {
-			comboFecha.addItem(formatoDisplay.format(f));
-		}
-
-		if (comboFecha.getItemCount() > 0)
-			comboFecha.setSelectedIndex(0);
-		cargarHoras();
+	private void initDefaultValues() {
+		Date hoy = new Date();
+		dcDesde.setDate(hoy);
+		dcHasta.setDate(new Date(hoy.getTime() + (1000L * 60 * 60 * 24 * 7)));
 	}
 
-	private void cargarHoras() {
-		comboHora.removeAllItems();
+	private void cargarEspecialidades() {
+		try {
+			String[] especialidades = controllerPaciente.obtenerEspecialidades();
+			cmbEspecialidad.removeAllItems();
 
-		int idxMedico = comboMedico.getSelectedIndex();
-		int idxFecha = comboFecha.getSelectedIndex();
-		if (idxMedico < 0 || idxFecha < 0)
-			return;
-
-		Medico medico = medicosFiltrados.get(idxMedico);
-		Date fechaSeleccionada = fechasDisponiblesPorMedico.get(medico.getUsuario()).get(idxFecha);
-
-		List<String> franjas = controllerPaciente.obtenerHorariosDisponibles(medico.getUsuario());
-		for (String f : franjas) {
-			String[] partes = f.split(" - ");
-			try {
-				Date fecha = formatoInternoFecha.parse(partes[0].trim());
-				if (!fecha.equals(fechaSeleccionada))
-					continue;
-
-				String horaInicio = partes[1].substring(0, 5);
-				comboHora.addItem(horaInicio);
-			} catch (Exception ex) {
-				ex.printStackTrace();
+			if (especialidades.length == 0) {
+				cmbEspecialidad.addItem("No hay especialidades");
+				return;
 			}
+			for (String esp : especialidades) {
+				cmbEspecialidad.addItem(esp);
+			}
+		} catch (Exception e) {
+			cmbEspecialidad.addItem("Error");
 		}
-
-		if (comboHora.getItemCount() > 0)
-			comboHora.setSelectedIndex(0);
 	}
 
-	private void reservarTurno() {
-		int idxMedico = comboMedico.getSelectedIndex();
-		int idxFecha = comboFecha.getSelectedIndex();
-		int idxHora = comboHora.getSelectedIndex();
-
-		if (idxMedico < 0 || idxFecha < 0 || idxHora < 0) {
-			JOptionPane.showMessageDialog(this, "Debe seleccionar médico, fecha y hora", "Atención",
-					JOptionPane.WARNING_MESSAGE);
-			return;
-		}
-
-		Medico medico = medicosFiltrados.get(idxMedico);
-		Date fechaSeleccionada = fechasDisponiblesPorMedico.get(medico.getUsuario()).get(idxFecha);
-		String horaStr = (String) comboHora.getSelectedItem();
+	private void onBuscarTurnos(ActionEvent e) {
+		modeloTabla.setRowCount(0);
+		resultadosBusqueda.clear();
 
 		try {
-			Date hora = formatoHora.parse(horaStr);
+			String especialidad = (String) cmbEspecialidad.getSelectedItem();
+			Date dDesde = dcDesde.getDate();
+			Date dHasta = dcHasta.getDate();
 
-			Calendar cal = Calendar.getInstance();
-			cal.setTime(fechaSeleccionada);
-			Calendar calHora = Calendar.getInstance();
-			calHora.setTime(hora);
+			if (especialidad == null || especialidad.trim().isEmpty() || especialidad.equals("No hay especialidades")) {
+				JOptionPane.showMessageDialog(this, "Seleccione una especialidad válida.");
+				return;
+			}
+			if (dDesde == null || dHasta == null) {
+				JOptionPane.showMessageDialog(this, "Debe seleccionar ambas fechas (Desde y Hasta).");
+				return;
+			}
 
-			cal.set(Calendar.HOUR_OF_DAY, calHora.get(Calendar.HOUR_OF_DAY));
-			cal.set(Calendar.MINUTE, calHora.get(Calendar.MINUTE));
-			cal.set(Calendar.SECOND, 0);
-			cal.set(Calendar.MILLISECOND, 0);
+			LocalDate desde = dDesde.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+			LocalDate hasta = dHasta.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 
-			Date fechaHoraTurno = cal.getTime();
-			controllerPaciente.solicitarTurno(medico, fechaHoraTurno);
+			if (hasta.isBefore(desde)) {
+				JOptionPane.showMessageDialog(this, "La fecha 'Hasta' debe ser mayor o igual a 'Desde'.");
+				return;
+			}
 
-			JOptionPane.showMessageDialog(this, "Turno reservado correctamente!", "Éxito",
-					JOptionPane.INFORMATION_MESSAGE);
-			if (gestionTurnosPadre != null)
-				gestionTurnosPadre.cargarTurnos();
-			dispose();
+			List<TurnoDisponible> items = controllerPaciente.buscarTurnos(especialidad, desde, hasta);
+
+			this.resultadosBusqueda = items;
+
+			for (TurnoDisponible it : items) {
+				String fechaStr = it.fecha().format(F_DDMMYYYY);
+				String horaInicioStr = it.horaInicio().toString();
+
+				modeloTabla.addRow(new Object[] { it.medicoNombre(), it.medicoEspecialidad(), fechaStr, horaInicioStr,
+						it.idDisponibilidad() });
+			}
+
+		} catch (IllegalStateException ex) {
+			JOptionPane.showMessageDialog(this, ex.getMessage(), "Sin Resultados", JOptionPane.INFORMATION_MESSAGE);
+		} catch (Exception ex) {
+			JOptionPane.showMessageDialog(this, "Error al buscar turnos: " + ex.getMessage(), "Error",
+					JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	private int filaSeleccionada() {
+		int row = tablaTurnosDisponibles.getSelectedRow();
+		if (row == -1) {
+			JOptionPane.showMessageDialog(this, "Seleccione un turno de la lista para reservar.");
+		}
+		return row;
+	}
+
+	private void reservarTurnoSeleccionado() {
+		int row = filaSeleccionada();
+		if (row == -1)
+			return;
+
+		long idDisponibilidad = (long) modeloTabla.getValueAt(row, 4);
+
+		int conf = JOptionPane.showConfirmDialog(this, "¿Confirma la reserva de este turno?", "Confirmar Reserva",
+				JOptionPane.YES_NO_OPTION);
+		if (conf != JOptionPane.YES_OPTION)
+			return;
+
+		try {
+			long idTurno = controllerPaciente.solicitarTurno(idDisponibilidad);
+			JOptionPane.showMessageDialog(this, "¡Turno reservado con éxito!");
+
+			// Eliminar fila visualmente
+			modeloTabla.removeRow(row);
 
 		} catch (Exception ex) {
-			JOptionPane.showMessageDialog(this, "Error al reservar el turno: " + ex.getMessage(), "Error",
+			JOptionPane.showMessageDialog(this, "Error al reservar: " + ex.getMessage(), "Error",
 					JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	private void estiloBotonAccion(RoundedButton btn, Color bg) {
+		btn.setBackground(bg);
+		btn.setForeground(Color.WHITE);
+		btn.setFont(BUTTON);
+		btn.setFocusPainted(false);
+		btn.setBorder(BorderFactory.createEmptyBorder(6, 18, 6, 18));
+		btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+	}
+
+	private void ocultarColumna(int index) {
+		TableColumnModel tcm = tablaTurnosDisponibles.getColumnModel();
+		if (index >= 0 && index < tcm.getColumnCount()) {
+			TableColumn col = tcm.getColumn(index);
+			col.setMinWidth(0);
+			col.setMaxWidth(0);
+			col.setPreferredWidth(0);
 		}
 	}
 }
