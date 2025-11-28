@@ -17,8 +17,10 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import bll.Medico;
 import dll.ControllerMedico;
@@ -436,42 +438,43 @@ public class DispoMedicoFrame extends JFrame {
 				java.sql.Time sqlHf = java.sql.Time.valueOf(hf);
 
 				// Días seleccionados
-				java.util.Set<DayOfWeek> diasSeleccionados = new java.util.HashSet<>();
-				if (chkLun.isSelected())
-					diasSeleccionados.add(DayOfWeek.MONDAY);
-				if (chkMar.isSelected())
-					diasSeleccionados.add(DayOfWeek.TUESDAY);
-				if (chkMie.isSelected())
-					diasSeleccionados.add(DayOfWeek.WEDNESDAY);
-				if (chkJue.isSelected())
-					diasSeleccionados.add(DayOfWeek.THURSDAY);
-				if (chkVie.isSelected())
-					diasSeleccionados.add(DayOfWeek.FRIDAY);
-				if (chkSab.isSelected())
-					diasSeleccionados.add(DayOfWeek.SATURDAY);
-				if (chkDom.isSelected())
-					diasSeleccionados.add(DayOfWeek.SUNDAY);
+				Set<DayOfWeek> diasSeleccionados = EnumSet.noneOf(DayOfWeek.class);
+
+				if (chkLun.isSelected()) diasSeleccionados.add(DayOfWeek.MONDAY);
+				if (chkMar.isSelected()) diasSeleccionados.add(DayOfWeek.TUESDAY);
+				if (chkMie.isSelected()) diasSeleccionados.add(DayOfWeek.WEDNESDAY);
+				if (chkJue.isSelected()) diasSeleccionados.add(DayOfWeek.THURSDAY);
+				if (chkVie.isSelected()) diasSeleccionados.add(DayOfWeek.FRIDAY);
+				if (chkSab.isSelected()) diasSeleccionados.add(DayOfWeek.SATURDAY);
+				if (chkDom.isSelected()) diasSeleccionados.add(DayOfWeek.SUNDAY);
 
 				if (diasSeleccionados.isEmpty()) {
-					mostrarInfo("Disponibilidad", "Seleccione al menos un día de la semana");
-					return;
+				    mostrarInfo("Disponibilidad", "Seleccione al menos un día de la semana");
+				    return;
 				}
 
 				int registrados = 0;
 				int solapados = 0;
-
 				LocalDate fechaReg = desde;
+
 				while (!fechaReg.isAfter(hasta)) {
-					if (diasSeleccionados.contains(fechaReg.getDayOfWeek())) {
-						try {
-							controllerMedico.registrarDisponibilidad(java.sql.Date.valueOf(fechaReg), sqlHi, sqlHf);
-							registrados++;
-						} catch (IllegalArgumentException exVal) {							
-							solapados++;
-						}
-					}
-					fechaReg = fechaReg.plusDays(1);
+				    DayOfWeek dow = fechaReg.getDayOfWeek();
+				    System.out.println("Fecha: " + fechaReg + " / Día: " + dow +
+				            " / seleccionado? " + diasSeleccionados.contains(dow));
+
+				    if (diasSeleccionados.contains(dow)) {
+				        try {
+				            controllerMedico.registrarDisponibilidad(
+				                    java.sql.Date.valueOf(fechaReg), sqlHi, sqlHf
+				            );
+				            registrados++;
+				        } catch (IllegalArgumentException exVal) {
+				            solapados++;
+				        }
+				    }
+				    fechaReg = fechaReg.plusDays(1);
 				}
+
 
 				if (registrados > 0) {
 					String msg = "Disponibilidades registradas: " + registrados;
