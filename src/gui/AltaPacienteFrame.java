@@ -141,25 +141,91 @@ public class AltaPacienteFrame extends JFrame {
 
             if (usuario.isEmpty() || nombre.isEmpty() || apellido.isEmpty() ||
                     pass.isEmpty() || contrato.isEmpty() || obra.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Debe completar todos los campos");
+
+                mostrarDialogoMensaje(
+                        "Validación",
+                        "Debe completar todos los campos.",
+                        COLOR_ACCENT
+                );
                 return;
             }
 
             if (!contrato.matches("\\d+")) {
-                JOptionPane.showMessageDialog(this, "El contrato debe ser numérico");
+                mostrarDialogoMensaje(
+                        "Validación",
+                        "El número de contrato debe ser numérico.",
+                        COLOR_ACCENT
+                );
                 return;
             }
 
-            controller.registrarPaciente(usuario, nombre, apellido, pass,
-                    Integer.parseInt(contrato), obra);
+            controller.registrarPaciente(
+                    usuario,
+                    nombre,
+                    apellido,
+                    pass,
+                    Integer.parseInt(contrato),
+                    obra
+            );
 
-            JOptionPane.showMessageDialog(this, "Paciente registrado correctamente");
+            mostrarDialogoMensaje(
+                    "Alta exitosa",
+                    "Paciente registrado correctamente.",
+                    COLOR_PRIMARY
+            );
+
             dispose();
 
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error al registrar: " + ex.getMessage());
+            mostrarDialogoMensaje(
+                    "Error",
+                    "Error al registrar el paciente:<br>" + ex.getMessage(),
+                    new Color(180, 60, 60)
+            );
         }
     }
+
+    
+    private void mostrarDialogoMensaje(String titulo, String mensaje, Color buttonBg) {
+
+        JDialog dlg = new JDialog(this, titulo, true);
+        dlg.setSize(380, 160);
+        dlg.setLocationRelativeTo(this);
+        dlg.setLayout(new BorderLayout());
+        dlg.getContentPane().setBackground(Color.WHITE);
+
+        JPanel content = new JPanel(new BorderLayout());
+        content.setBackground(Color.WHITE);
+        content.setBorder(BorderFactory.createEmptyBorder(14, 18, 10, 18));
+
+        JLabel lblMsg = new JLabel(
+                "<html><div style='text-align:center;'>" + mensaje + "</div></html>",
+                SwingConstants.CENTER
+        );
+        lblMsg.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 14));
+        content.add(lblMsg, BorderLayout.CENTER);
+
+        dlg.add(content, BorderLayout.CENTER);
+
+        JPanel footer = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        footer.setBackground(Color.WHITE);
+
+        RoundedButton btnOk = new RoundedButton("Aceptar");
+        btnOk.setBackground(buttonBg);
+        btnOk.setForeground(Color.WHITE);
+        btnOk.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 14));
+        btnOk.setBorder(BorderFactory.createEmptyBorder(6, 18, 6, 18));
+        btnOk.setFocusPainted(false);
+        btnOk.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnOk.addActionListener(e -> dlg.dispose());
+
+        footer.add(btnOk);
+        dlg.add(footer, BorderLayout.SOUTH);
+
+        dlg.setVisible(true);
+    }
+
+
 
     // ---------- Componentes redondeados ----------
 
