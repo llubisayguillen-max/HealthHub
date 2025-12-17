@@ -145,10 +145,15 @@ public class ModificarPacienteFrame extends JFrame {
         Paciente p = controller.obtenerPaciente(usuarioBuscado);
 
         if (p == null) {
-            JOptionPane.showMessageDialog(this, "Paciente no encontrado.");
+            mostrarDialogoMensaje(
+                    "Paciente inexistente",
+                    "Paciente no encontrado.",
+                    COLOR_ACCENT
+            );
             dispose();
             return;
         }
+
 
         txtUsuario.setText(p.getUsuario());
         txtNombre.setText(p.getNombre());
@@ -167,23 +172,81 @@ public class ModificarPacienteFrame extends JFrame {
         String nro = txtContrato.getText().trim();
         String os = txtOS.getText().trim();
 
-        if (nom.isEmpty()) { mensaje("Ingrese el nombre."); return; }
-        if (ape.isEmpty()) { mensaje("Ingrese el apellido."); return; }
-        if (pass.isEmpty()) { mensaje("Ingrese la contraseña."); return; }
-        if (!nro.matches("\\d+")) { mensaje("El contrato debe ser numérico."); return; }
-        if (os.isEmpty()) { mensaje("Ingrese la obra social."); return; }
+        if (nom.isEmpty()) {
+            mostrarDialogoMensaje("Validación", "Ingrese el nombre.", COLOR_ACCENT);
+            return;
+        }
+        if (ape.isEmpty()) {
+            mostrarDialogoMensaje("Validación", "Ingrese el apellido.", COLOR_ACCENT);
+            return;
+        }
+        if (pass.isEmpty()) {
+            mostrarDialogoMensaje("Validación", "Ingrese la contraseña.", COLOR_ACCENT);
+            return;
+        }
+        if (!nro.matches("\\d+")) {
+            mostrarDialogoMensaje("Validación", "El contrato debe ser numérico.", COLOR_ACCENT);
+            return;
+        }
+        if (os.isEmpty()) {
+            mostrarDialogoMensaje("Validación", "Ingrese la obra social.", COLOR_ACCENT);
+            return;
+        }
+
 
         controller.modificarPaciente(
                 usr, nom, ape, pass, Integer.parseInt(nro), os
         );
 
-        JOptionPane.showMessageDialog(this, "Paciente modificado correctamente.");
+        mostrarDialogoMensaje(
+                "Operación exitosa",
+                "Paciente modificado correctamente.",
+                COLOR_ACCENT
+        );
+
         dispose();
     }
 
-    private void mensaje(String msg) {
-        JOptionPane.showMessageDialog(this, msg);
+    
+    private void mostrarDialogoMensaje(String titulo, String mensaje, Color buttonBg) {
+
+        JDialog dlg = new JDialog(this, titulo, true);
+        dlg.setSize(380, 160);
+        dlg.setLocationRelativeTo(this);
+        dlg.setLayout(new BorderLayout());
+        dlg.getContentPane().setBackground(Color.WHITE);
+
+        JPanel content = new JPanel(new BorderLayout());
+        content.setBackground(Color.WHITE);
+        content.setBorder(BorderFactory.createEmptyBorder(14, 18, 10, 18));
+
+        JLabel lblMsg = new JLabel(
+                "<html><div style='text-align:center;'>" + mensaje + "</div></html>",
+                SwingConstants.CENTER
+        );
+        lblMsg.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 14));
+        content.add(lblMsg, BorderLayout.CENTER);
+
+        dlg.add(content, BorderLayout.CENTER);
+
+        JPanel footer = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        footer.setBackground(Color.WHITE);
+
+        RoundedButton btnOk = new RoundedButton("Aceptar");
+        btnOk.setBackground(buttonBg);
+        btnOk.setForeground(Color.WHITE);
+        btnOk.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 14));
+        btnOk.setBorder(BorderFactory.createEmptyBorder(6, 18, 6, 18));
+        btnOk.setFocusPainted(false);
+        btnOk.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnOk.addActionListener(e -> dlg.dispose());
+
+        footer.add(btnOk);
+        dlg.add(footer, BorderLayout.SOUTH);
+
+        dlg.setVisible(true);
     }
+
 
 
     class RoundedTextField extends JTextField {

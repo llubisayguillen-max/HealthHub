@@ -2,7 +2,6 @@ package gui;
 
 import bll.HistorialMedico;
 import bll.Paciente;
-import bll.Medico;
 import dll.ControllerHistorial;
 
 import javax.swing.*;
@@ -42,20 +41,22 @@ public class VerHistorialPacienteFrame extends JFrame {
         getContentPane().setBackground(COLOR_BACKGROUND);
         setLayout(new BorderLayout());
 
-        //Top Bar
+        // Top bar
         JPanel topBar = new JPanel(new BorderLayout());
         topBar.setBackground(COLOR_PRIMARY);
         topBar.setPreferredSize(new Dimension(getWidth(), 85));
         topBar.setBorder(BorderFactory.createEmptyBorder(10, 40, 15, 40));
 
-        JLabel lblTitulo = new JLabel("Historial de " + paciente.getNombre() + " " + paciente.getApellido());
+        JLabel lblTitulo = new JLabel(
+                "Historial de " + paciente.getNombre() + " " + paciente.getApellido()
+        );
         lblTitulo.setForeground(Color.WHITE);
         lblTitulo.setFont(new Font(UI_FONT, Font.BOLD, 24));
 
         topBar.add(lblTitulo, BorderLayout.WEST);
         add(topBar, BorderLayout.NORTH);
 
-        //Card con tabla
+        // Card
         JPanel wrapper = new JPanel(new BorderLayout());
         wrapper.setOpaque(false);
         wrapper.setBorder(BorderFactory.createEmptyBorder(20, 32, 20, 32));
@@ -72,7 +73,6 @@ public class VerHistorialPacienteFrame extends JFrame {
         lblSubtitulo.setBorder(BorderFactory.createEmptyBorder(8, 0, 15, 0));
         card.add(lblSubtitulo, BorderLayout.NORTH);
 
-        // Tabla
         modeloTabla = new DefaultTableModel(
                 new Object[]{"Fecha", "Observaciones", "Médico"}, 0
         ) {
@@ -91,7 +91,7 @@ public class VerHistorialPacienteFrame extends JFrame {
         wrapper.add(card, BorderLayout.CENTER);
         add(wrapper, BorderLayout.CENTER);
 
-        //Footer
+        // Footer
         JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         footer.setBackground(COLOR_BACKGROUND);
         footer.setBorder(BorderFactory.createEmptyBorder(10, 40, 20, 40));
@@ -123,14 +123,18 @@ public class VerHistorialPacienteFrame extends JFrame {
         tabla.setSelectionForeground(Color.WHITE);
     }
 
+
     private void cargarHistorial() {
         modeloTabla.setRowCount(0);
 
-        List<HistorialMedico> registros = historialManager.listarPorPaciente(paciente.getUsuario());
+        List<HistorialMedico> registros =
+                historialManager.listarPorPaciente(paciente.getUsuario());
 
         if (registros == null || registros.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                    "No hay registros de historial para este paciente.");
+            new MensajeFrame(
+                    this,
+                    "No hay registros de historial para este paciente."
+            );
             return;
         }
 
@@ -139,7 +143,8 @@ public class VerHistorialPacienteFrame extends JFrame {
         for (HistorialMedico h : registros) {
             String nombreMedico = "N/A";
             if (h.getMedico() != null) {
-                nombreMedico = h.getMedico().getNombre() + " " + h.getMedico().getApellido();
+                nombreMedico = h.getMedico().getNombre()
+                        + " " + h.getMedico().getApellido();
             }
 
             modeloTabla.addRow(new Object[]{
@@ -147,6 +152,45 @@ public class VerHistorialPacienteFrame extends JFrame {
                     h.getObservaciones(),
                     nombreMedico
             });
+        }
+    }
+
+
+    private static class MensajeFrame extends JFrame {
+
+        public MensajeFrame(JFrame parent, String mensaje) {
+            setTitle("Información");
+            setSize(420, 170);
+            setLocationRelativeTo(parent);
+            setResizable(false);
+            setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+            JPanel panel = new JPanel(new BorderLayout());
+            panel.setBackground(COLOR_BACKGROUND);
+            panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+            JLabel lblMensaje = new JLabel(
+                    "<html><div style='text-align:center;'>" + mensaje + "</div></html>",
+                    SwingConstants.CENTER
+            );
+            lblMensaje.setFont(new Font(UI_FONT, Font.PLAIN, 14));
+            lblMensaje.setForeground(Color.BLACK);
+
+            RoundedButton btnOk = new RoundedButton("Aceptar");
+            btnOk.setBackground(COLOR_ACCENT);
+            btnOk.setForeground(Color.WHITE);
+            btnOk.setFont(new Font(UI_FONT, Font.PLAIN, 13));
+            btnOk.addActionListener(e -> dispose());
+
+            JPanel btnPanel = new JPanel();
+            btnPanel.setBackground(COLOR_BACKGROUND);
+            btnPanel.add(btnOk);
+
+            panel.add(lblMensaje, BorderLayout.CENTER);
+            panel.add(btnPanel, BorderLayout.SOUTH);
+
+            add(panel);
+            setVisible(true);
         }
     }
 
@@ -166,13 +210,21 @@ public class VerHistorialPacienteFrame extends JFrame {
         @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g;
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setRenderingHint(
+                    RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_ON
+            );
 
             g2.setColor(getBackground());
             g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
 
             g2.setColor(borderColor);
-            g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, radius, radius);
+            g2.drawRoundRect(
+                    0, 0,
+                    getWidth() - 1,
+                    getHeight() - 1,
+                    radius, radius
+            );
         }
     }
 }

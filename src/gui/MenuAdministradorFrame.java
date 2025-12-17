@@ -6,6 +6,8 @@ import bll.Administrador;
 import bll.Paciente;
 import dll.ControllerAdministrador;
 import static gui.UiPaleta.*;
+import javax.swing.border.Border;
+
 
 public class MenuAdministradorFrame extends JFrame {
 
@@ -75,17 +77,22 @@ public class MenuAdministradorFrame extends JFrame {
                 new Runnable[]{
                         () -> new AltaPacienteFrame(controller, admin).setVisible(true),
                         () -> {
-                            String usuario = JOptionPane.showInputDialog(
-                                    this,
-                                    "Ingrese el usuario del paciente:",
+                            String usuario = mostrarDialogoInput(
                                     "Modificar Paciente",
-                                    JOptionPane.QUESTION_MESSAGE
+                                    "Ingrese el usuario del paciente:"
                             );
-                            if (usuario != null && !usuario.isBlank())
-                                new ModificarPacienteFrame(controller, admin, usuario.trim()).setVisible(true);
+
+                            if (usuario != null && !usuario.isBlank()) {
+                                new ModificarPacienteFrame(
+                                        controller,
+                                        admin,
+                                        usuario.trim()
+                                ).setVisible(true);
+                            }
                         }
                 }
         );
+
 
         // CARD MÉDICOS 
         JPanel cardMedicos = crearCardConBotones(
@@ -95,18 +102,19 @@ public class MenuAdministradorFrame extends JFrame {
                 new Runnable[]{
                         () -> new AltaMedicoFrame(controller, admin).setVisible(true),
                         () -> {
-                            String usuario = JOptionPane.showInputDialog(
-                                    this,
-                                    "Ingrese el usuario del médico:",
-                                    "Modificar Médico",
-                                    JOptionPane.QUESTION_MESSAGE
-                            );
+                        	String usuario = mostrarDialogoInput(
+                        	        "Modificar Médico",
+                        	        "Ingrese el usuario del médico:"
+                        	);
+
                             if (usuario != null && !usuario.isBlank())
                                 new ModificarMedicoFrame(controller, usuario.trim()).setVisible(true);
                         }
                 }
         );
 
+        
+        
         //CARD USUARIOS
         JPanel cardUsuarios = crearCardConBotones(
                 "Funciones de Usuarios",
@@ -142,7 +150,11 @@ public class MenuAdministradorFrame extends JFrame {
                             var medicos = controller.listarMedicos();
                             var historialManager = controller.getHistorialManager();
 
-                            new CrearRegistroHistorialFrame(pacientes, medicos, historialManager).setVisible(true);
+                            new CrearRegistroHistorialFrame(
+                                    pacientes,
+                                    medicos,
+                                    historialManager
+                            ).setVisible(true);
                         },
 
                         // Acción Ver Historial
@@ -151,43 +163,89 @@ public class MenuAdministradorFrame extends JFrame {
                             var historialManager = controller.getHistorialManager();
 
                             if (pacientes.isEmpty()) {
-                                JOptionPane.showMessageDialog(this, "No hay pacientes registrados.");
+                                mostrarMensaje("Historial Médico", "No hay pacientes registrados.");
                                 return;
                             }
 
 
-                            String[] nombres = pacientes.stream()
-                                                        .map(Paciente::getNombre)
-                                                        .toArray(String[]::new);
+                            JFrame selectorFrame = new JFrame("Ver Historial");
+                            selectorFrame.setSize(420, 240);
+                            selectorFrame.setLocationRelativeTo(this);
+                            selectorFrame.setResizable(false);
+                            selectorFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                            selectorFrame.getContentPane().setBackground(COLOR_BACKGROUND);
+                            selectorFrame.setLayout(new BorderLayout());
 
 
-                            String seleccionado = (String) JOptionPane.showInputDialog(
-                                    this,
-                                    "Seleccione un paciente:",
-                                    "Ver Historial",
-                                    JOptionPane.QUESTION_MESSAGE,
-                                    null,
-                                    nombres,
-                                    nombres[0]
-                            );
+                            // Centro
+                            JPanel selectorCenter = new JPanel(new GridBagLayout());
+                            selectorCenter.setOpaque(false);
 
-                            if (seleccionado != null) {
+                            JPanel card = new JPanel(null);
+                            card.setBackground(COLOR_CARD_BG);
+                            card.setPreferredSize(new Dimension(360, 120));
+                            card.setBorder(BorderFactory.createLineBorder(COLOR_CARD_BORDER));
+
+                            JLabel lblPaciente = new JLabel("Paciente:");
+                            lblPaciente.setBounds(20, 25, 100, 25);
+                            lblPaciente.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 14));
+                            lblPaciente.setForeground(Color.BLACK);
+                            card.add(lblPaciente);
+
+                            JComboBox<String> comboPacientes = new JComboBox<>();
+                            comboPacientes.setBounds(120, 25, 210, 30);
+                            comboPacientes.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 14));
+
+                            pacientes.forEach(p -> comboPacientes.addItem(p.getNombre()));
+                            card.add(comboPacientes);
+
+                            RoundedButton btnAceptar = new RoundedButton("Aceptar");
+                            btnAceptar.setBounds(80, 70, 90, 32);
+                            btnAceptar.setBackground(COLOR_ACCENT);
+                            btnAceptar.setForeground(Color.WHITE);
+                            btnAceptar.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 13));
+
+                            RoundedButton btnCancelar = new RoundedButton("Cancelar");
+                            btnCancelar.setBounds(190, 70, 90, 32);
+                            btnCancelar.setBackground(new Color(200, 200, 200));
+                            btnCancelar.setForeground(Color.BLACK);
+                            btnCancelar.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 13));
+
+
+                            btnAceptar.addActionListener(e -> {
+                                String seleccionado = (String) comboPacientes.getSelectedItem();
 
                                 Paciente paciente = pacientes.stream()
-                                                             .filter(p -> p.getNombre().equals(seleccionado))
-                                                             .findFirst()
-                                                             .orElse(null);
+                                        .filter(p -> p.getNombre().equals(seleccionado))
+                                        .findFirst()
+                                        .orElse(null);
 
                                 if (paciente != null) {
-                                    // Abrir frame de historial del paciente
-                                    new VerHistorialPacienteFrame(paciente, historialManager).setVisible(true);
+                                    new VerHistorialPacienteFrame(
+                                            paciente,
+                                            historialManager
+                                    ).setVisible(true);
                                 } else {
-                                    JOptionPane.showMessageDialog(this, "Paciente no encontrado.");
+                                    mostrarMensaje("Historial Médico", "Paciente no encontrado.");
                                 }
-                            }
+
+                                selectorFrame.dispose();
+                            });
+
+                            btnCancelar.addActionListener(e -> selectorFrame.dispose());
+
+                            card.add(btnAceptar);
+                            card.add(btnCancelar);
+
+                            selectorCenter.add(card);
+                            selectorFrame.add(selectorCenter, BorderLayout.CENTER);
+
+                            selectorFrame.setVisible(true);
                         }
                 }
         );
+
+
 
 
 
@@ -319,4 +377,128 @@ public class MenuAdministradorFrame extends JFrame {
             g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radius, radius);
         }
     }
+    
+	    private void mostrarMensaje(String titulo, String mensaje) {
+	
+	        JDialog dlg = new JDialog(this, titulo, true);
+	        dlg.setSize(360, 150);
+	        dlg.setLocationRelativeTo(this);
+	        dlg.setLayout(new BorderLayout());
+	        dlg.getContentPane().setBackground(Color.WHITE);
+	
+	        JPanel content = new JPanel(new BorderLayout());
+	        content.setBackground(Color.WHITE);
+	        content.setBorder(BorderFactory.createEmptyBorder(16, 18, 10, 18));
+	
+	        JLabel lblMsg = new JLabel("<html><center>" + mensaje + "</center></html>");
+	        lblMsg.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 14));
+	        content.add(lblMsg, BorderLayout.CENTER);
+	
+	        dlg.add(content, BorderLayout.CENTER);
+	
+	        JPanel footer = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+	        footer.setBackground(Color.WHITE);
+	
+	        RoundedButton btnOk = new RoundedButton("Aceptar");
+	        btnOk.setBackground(COLOR_ACCENT);
+	        btnOk.setForeground(Color.WHITE);
+	        btnOk.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 14));
+	        btnOk.setCursor(new Cursor(Cursor.HAND_CURSOR));
+	        btnOk.addActionListener(e -> dlg.dispose());
+	
+	        footer.add(btnOk);
+	        dlg.add(footer, BorderLayout.SOUTH);
+	
+	        dlg.setVisible(true);
+	    }
+    
+	    private String mostrarDialogoInput(String titulo, String mensaje) {
+	
+	        JDialog dlg = new JDialog(this, titulo, true);
+	        dlg.setSize(400, 190);
+	        dlg.setLocationRelativeTo(this);
+	        dlg.setLayout(new BorderLayout());
+	        dlg.getContentPane().setBackground(Color.WHITE);
+	
+	        JPanel content = new JPanel(new BorderLayout(0, 10));
+	        content.setBackground(Color.WHITE);
+	        content.setBorder(BorderFactory.createEmptyBorder(16, 18, 10, 18));
+	
+	        JLabel lblMsg = new JLabel(mensaje, SwingConstants.CENTER);
+	        lblMsg.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 14));
+	        content.add(lblMsg, BorderLayout.NORTH);
+	
+	        RoundedTextField txtInput = new RoundedTextField(12);
+	        txtInput.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 14));
+	        txtInput.setPreferredSize(new Dimension(260, 38));
+	        txtInput.setBorder(BorderFactory.createEmptyBorder(5, 12, 5, 12));
+	        txtInput.setCaretColor(COLOR_ACCENT);
+
+
+	        content.add(txtInput, BorderLayout.CENTER);
+
+	
+	        dlg.add(content, BorderLayout.CENTER);
+	
+	        final String[] resultado = new String[1];
+	
+	        JPanel footer = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+	        footer.setBackground(Color.WHITE);
+	
+	        RoundedButton btnAceptar = new RoundedButton("Aceptar");
+	        btnAceptar.setBackground(COLOR_ACCENT);
+	        btnAceptar.setForeground(Color.WHITE);
+	        btnAceptar.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 14));
+	        btnAceptar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+	        btnAceptar.addActionListener(e -> {
+	            resultado[0] = txtInput.getText();
+	            dlg.dispose();
+	        });
+	
+	        RoundedButton btnCancelar = new RoundedButton("Cancelar");
+	        btnCancelar.setBackground(new Color(180, 180, 180));
+	        btnCancelar.setForeground(Color.WHITE);
+	        btnCancelar.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 14));
+	        btnCancelar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+	        btnCancelar.addActionListener(e -> {
+	            resultado[0] = null;
+	            dlg.dispose();
+	        });
+	
+	        footer.add(btnAceptar);
+	        footer.add(btnCancelar);
+	
+	        dlg.add(footer, BorderLayout.SOUTH);
+	        dlg.setVisible(true);
+	
+	        return resultado[0];
+	    }
+
+	    class RoundedTextField extends JTextField {
+	        private int radius;
+
+	        public RoundedTextField(int radius) {
+	            super();
+	            this.radius = radius;
+	            setOpaque(false);
+	        }
+
+	        @Override
+	        protected void paintComponent(Graphics g) {
+	            Graphics2D g2 = (Graphics2D) g.create();
+	            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+	            g2.setColor(Color.WHITE);
+	            g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
+
+	            g2.setColor(new Color(200, 200, 200));
+	            g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radius, radius);
+
+	            super.paintComponent(g);
+	            g2.dispose();
+	        }
+	    }
+
+
 }
+

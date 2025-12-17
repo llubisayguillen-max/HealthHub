@@ -30,6 +30,7 @@ public class DesbloquearUsuarioFrame extends JFrame {
         getContentPane().setBackground(COLOR_BACKGROUND);
         setLayout(new BorderLayout());
 
+        // HEADER
         JPanel topBar = new JPanel(new BorderLayout());
         topBar.setBackground(COLOR_PRIMARY);
         topBar.setPreferredSize(new Dimension(getWidth(), 80));
@@ -42,7 +43,7 @@ public class DesbloquearUsuarioFrame extends JFrame {
         topBar.add(lblTitulo, BorderLayout.WEST);
         add(topBar, BorderLayout.NORTH);
 
-        //card
+        // CARD
         JPanel wrapper = new JPanel(new GridBagLayout());
         wrapper.setBackground(COLOR_BACKGROUND);
 
@@ -54,27 +55,48 @@ public class DesbloquearUsuarioFrame extends JFrame {
 
         int y = 40;
 
-        //Usuario
         card.add(crearLabel("Usuario:", 30, y));
         txtUsuario = crearCampo(160, y);
         card.add(txtUsuario);
         y += 55;
 
-        //Botón Desbloquear
         RoundedButton btnDesbloquear = new RoundedButton("Desbloquear");
         btnDesbloquear.setBackground(COLOR_ACCENT);
         btnDesbloquear.setForeground(Color.WHITE);
         btnDesbloquear.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 16));
         btnDesbloquear.setBounds(160, y, 200, 40);
         btnDesbloquear.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
         btnDesbloquear.addActionListener(e -> desbloquearUsuario());
         card.add(btnDesbloquear);
-        y += 55;
-
 
         wrapper.add(card);
         add(wrapper, BorderLayout.CENTER);
+    }
+
+
+    private void desbloquearUsuario() {
+        String usr = txtUsuario.getText().trim();
+
+        if (usr.isEmpty()) {
+            mostrarMensaje(
+                    "Campo obligatorio",
+                    "Debe ingresar un nombre de usuario.",
+                    COLOR_PRIMARY,
+                    new Color(200, 80, 80)
+            );
+            return;
+        }
+
+        controller.desbloquearUsuario(usr);
+
+        mostrarMensaje(
+                "Operación exitosa",
+                "Usuario desbloqueado correctamente.",
+                COLOR_PRIMARY,
+                COLOR_ACCENT
+        );
+
+        dispose();
     }
 
 
@@ -94,19 +116,43 @@ public class DesbloquearUsuarioFrame extends JFrame {
         return txt;
     }
 
-    private void desbloquearUsuario() {
-        String usr = txtUsuario.getText().trim();
 
-        if (usr.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Debe ingresar un nombre de usuario.");
-            return;
-        }
+    private void mostrarMensaje(String titulo, String mensaje, Color headerBg, Color buttonBg) {
 
-        controller.desbloquearUsuario(usr);
-        JOptionPane.showMessageDialog(this, "Usuario desbloqueado exitosamente.");
-        dispose();
+        JDialog dlg = new JDialog(this, titulo, true);
+        dlg.setSize(360, 160);
+        dlg.setLocationRelativeTo(this);
+        dlg.setLayout(new BorderLayout());
+        dlg.getContentPane().setBackground(Color.WHITE);
+
+        JPanel content = new JPanel(new BorderLayout());
+        content.setBackground(Color.WHITE);
+        content.setBorder(BorderFactory.createEmptyBorder(20, 22, 10, 22));
+
+        JLabel lblMsg = new JLabel(
+                "<html><div style='text-align:center;'>" + mensaje + "</div></html>"
+        );
+        lblMsg.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 14));
+        lblMsg.setHorizontalAlignment(SwingConstants.CENTER);
+
+        content.add(lblMsg, BorderLayout.CENTER);
+        dlg.add(content, BorderLayout.CENTER);
+
+        JPanel footer = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        footer.setBackground(Color.WHITE);
+
+        RoundedButton btnOk = new RoundedButton("Aceptar");
+        btnOk.setBackground(buttonBg);
+        btnOk.setForeground(Color.WHITE);
+        btnOk.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 14));
+        btnOk.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnOk.addActionListener(e -> dlg.dispose());
+
+        footer.add(btnOk);
+        dlg.add(footer, BorderLayout.SOUTH);
+
+        dlg.setVisible(true);
     }
-
 
     class RoundedTextField extends JTextField {
         private final int radius;
@@ -159,4 +205,3 @@ public class DesbloquearUsuarioFrame extends JFrame {
         }
     }
 }
-

@@ -42,7 +42,6 @@ public class EliminarUsuarioFrame extends JFrame {
         topBar.add(lblTitulo, BorderLayout.WEST);
         add(topBar, BorderLayout.NORTH);
 
-        //card
         JPanel wrapper = new JPanel(new GridBagLayout());
         wrapper.setBackground(COLOR_BACKGROUND);
 
@@ -54,28 +53,23 @@ public class EliminarUsuarioFrame extends JFrame {
 
         int y = 40;
 
-        //Usuario
         card.add(crearLabel("Usuario a eliminar:", 30, y));
         txtUsuario = crearCampo(200, y);
         card.add(txtUsuario);
         y += 55;
 
-        //Botón Eliminar
         RoundedButton btnEliminar = new RoundedButton("Eliminar");
         btnEliminar.setBackground(new Color(220, 75, 75));
         btnEliminar.setForeground(Color.WHITE);
         btnEliminar.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 16));
         btnEliminar.setBounds(165, y, 200, 40);
         btnEliminar.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
         btnEliminar.addActionListener(e -> eliminarUsuario());
-        card.add(btnEliminar);
-        y += 55;
 
+        card.add(btnEliminar);
         wrapper.add(card);
         add(wrapper, BorderLayout.CENTER);
     }
-
 
     private JLabel crearLabel(String txt, int x, int y) {
         JLabel lbl = new JLabel(txt);
@@ -97,19 +91,54 @@ public class EliminarUsuarioFrame extends JFrame {
         String usr = txtUsuario.getText().trim();
 
         if (usr.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Debe ingresar un nombre de usuario.");
+            new MensajeFrame(this, "Debe ingresar un nombre de usuario.", false);
             return;
         }
 
         try {
             controller.eliminarUsuario(usr);
-            JOptionPane.showMessageDialog(this, "Usuario eliminado exitosamente.");
+            new MensajeFrame(this, "Usuario eliminado exitosamente.", true);
             dispose();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this,
-                    "Error: " + e.getMessage(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
+            new MensajeFrame(this, "Error: " + e.getMessage(), false);
+        }
+    }
+
+
+    private static class MensajeFrame extends JFrame {
+
+        public MensajeFrame(JFrame parent, String mensaje, boolean exito) {
+            setTitle(exito ? "Operación Exitosa" : "Error");
+            setSize(420, 180);
+            setLocationRelativeTo(parent);
+            setResizable(false);
+
+            JPanel panel = new JPanel(new BorderLayout());
+            panel.setBackground(COLOR_BACKGROUND);
+            panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+            JLabel lblMensaje = new JLabel(
+                    "<html><div style='text-align:center;'>" + mensaje + "</div></html>",
+                    SwingConstants.CENTER
+            );
+            lblMensaje.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 15));
+            lblMensaje.setForeground(exito ? MINT_DARK : new Color(200, 60, 60));
+
+            RoundedButton btnOk = new RoundedButton("Aceptar");
+            btnOk.setBackground(COLOR_ACCENT);
+            btnOk.setForeground(Color.WHITE);
+            btnOk.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 14));
+            btnOk.addActionListener(e -> dispose());
+
+            JPanel btnPanel = new JPanel();
+            btnPanel.setBackground(COLOR_BACKGROUND);
+            btnPanel.add(btnOk);
+
+            panel.add(lblMensaje, BorderLayout.CENTER);
+            panel.add(btnPanel, BorderLayout.SOUTH);
+
+            add(panel);
+            setVisible(true);
         }
     }
 

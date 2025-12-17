@@ -37,7 +37,6 @@ public class CrearRegistroHistorialFrame extends JFrame {
         getContentPane().setBackground(COLOR_BACKGROUND);
         setLayout(new BorderLayout());
 
-
         JPanel topBar = new JPanel(new BorderLayout());
         topBar.setBackground(COLOR_PRIMARY);
         topBar.setPreferredSize(new Dimension(getWidth(), 80));
@@ -50,7 +49,6 @@ public class CrearRegistroHistorialFrame extends JFrame {
         topBar.add(lblTitulo, BorderLayout.WEST);
         add(topBar, BorderLayout.NORTH);
 
-        //CARD
         JPanel wrapper = new JPanel(new GridBagLayout());
         wrapper.setBackground(COLOR_BACKGROUND);
 
@@ -62,14 +60,11 @@ public class CrearRegistroHistorialFrame extends JFrame {
 
         int y = 30;
 
-        //Paciente
         card.add(crearLabel("Paciente:", 30, y));
 
         cmbPaciente = new JComboBox<>(pacientes.toArray(new Paciente[0]));
         cmbPaciente.setBounds(150, y, 300, 35);
         cmbPaciente.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 14));
-
-        //para mostrar Nombre + Apellido del paciente
         cmbPaciente.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(
@@ -80,23 +75,18 @@ public class CrearRegistroHistorialFrame extends JFrame {
                 if (value instanceof Paciente p) {
                     setText(p.getNombre() + " " + p.getApellido());
                 }
-
                 return this;
             }
         });
-
         card.add(cmbPaciente);
 
         y += 60;
 
-        //Médico
         card.add(crearLabel("Médico:", 30, y));
 
         cmbMedico = new JComboBox<>(medicos.toArray(new Medico[0]));
         cmbMedico.setBounds(150, y, 300, 35);
         cmbMedico.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 14));
-
-        //para mostrar Nombre + Apellido del médico
         cmbMedico.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(
@@ -107,16 +97,13 @@ public class CrearRegistroHistorialFrame extends JFrame {
                 if (value instanceof Medico m) {
                     setText(m.getNombre() + " " + m.getApellido());
                 }
-
                 return this;
             }
         });
-
         card.add(cmbMedico);
 
         y += 60;
 
-        //Descripción
         card.add(crearLabel("Descripción:", 30, y));
 
         txtDescripcion = new JTextArea();
@@ -130,14 +117,12 @@ public class CrearRegistroHistorialFrame extends JFrame {
 
         y += 150;
 
-        //Guardar
         RoundedButton btnGuardar = new RoundedButton("Guardar Registro");
         btnGuardar.setBackground(COLOR_ACCENT);
         btnGuardar.setForeground(Color.WHITE);
         btnGuardar.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 16));
         btnGuardar.setBounds(150, y, 200, 40);
         btnGuardar.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
         btnGuardar.addActionListener(e -> guardarRegistro());
 
         card.add(btnGuardar);
@@ -145,7 +130,6 @@ public class CrearRegistroHistorialFrame extends JFrame {
         wrapper.add(card);
         add(wrapper, BorderLayout.CENTER);
     }
-
 
     private JLabel crearLabel(String text, int x, int y) {
         JLabel lbl = new JLabel(text);
@@ -155,38 +139,77 @@ public class CrearRegistroHistorialFrame extends JFrame {
         return lbl;
     }
 
-    //GUARDAR
+
     private void guardarRegistro() {
         Paciente paciente = (Paciente) cmbPaciente.getSelectedItem();
         Medico medico = (Medico) cmbMedico.getSelectedItem();
         String descripcion = txtDescripcion.getText().trim();
 
         if (paciente == null) {
-            JOptionPane.showMessageDialog(this, "Debe seleccionar un paciente.");
+            new MensajeFrame(this, "Debe seleccionar un paciente.", false);
             return;
         }
         if (medico == null) {
-            JOptionPane.showMessageDialog(this, "Debe seleccionar un médico.");
+            new MensajeFrame(this, "Debe seleccionar un médico.", false);
             return;
         }
         if (descripcion.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "La descripción no puede estar vacía.");
+            new MensajeFrame(this, "La descripción no puede estar vacía.", false);
             return;
         }
 
         try {
             boolean ok = manager.crearRegistro(paciente, medico, descripcion);
             if (ok) {
-                JOptionPane.showMessageDialog(this, "Registro guardado con éxito.");
+                new MensajeFrame(this, "Registro guardado con éxito.", true);
                 dispose();
             } else {
-                JOptionPane.showMessageDialog(this, "No se pudo guardar el registro.");
+                new MensajeFrame(this, "No se pudo guardar el registro.", false);
             }
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
+            new MensajeFrame(this, "Error: " + ex.getMessage(), false);
         }
     }
 
+
+    private static class MensajeFrame extends JFrame {
+
+        public MensajeFrame(JFrame parent, String mensaje, boolean exito) {
+            setTitle(exito ? "Operación Exitosa" : "Error");
+            setSize(420, 180);
+            setLocationRelativeTo(parent);
+            setResizable(false);
+
+            JPanel panel = new JPanel(new BorderLayout());
+            panel.setBackground(COLOR_BACKGROUND);
+            panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+            JLabel lblMensaje = new JLabel(
+                    "<html><div style='text-align:center;'>" + mensaje + "</div></html>",
+                    SwingConstants.CENTER
+            );
+            lblMensaje.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 15));
+            lblMensaje.setForeground(exito ? MINT_DARK : new Color(200, 60, 60));
+
+            RoundedButton btnOk = new RoundedButton("Aceptar");
+            btnOk.setBackground(COLOR_ACCENT);
+            btnOk.setForeground(Color.WHITE);
+            btnOk.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 14));
+            btnOk.addActionListener(e -> dispose());
+
+            JPanel btnPanel = new JPanel();
+            btnPanel.setBackground(COLOR_BACKGROUND);
+            btnPanel.add(btnOk);
+
+            panel.add(lblMensaje, BorderLayout.CENTER);
+            panel.add(btnPanel, BorderLayout.SOUTH);
+
+            add(panel);
+            setVisible(true);
+        }
+    }
+
+    //CARD
 
     private static class RoundedCardPanel extends JPanel {
         private final int radius;

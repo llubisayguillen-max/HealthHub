@@ -123,12 +123,24 @@ public class ResetearContraseniaFrame extends JFrame {
         String nueva = new String(txtNuevaPass.getPassword()).trim();
 
         if (usr.isEmpty() || nueva.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Debe completar todos los campos");
+            mostrarMensaje(
+                    "Campos incompletos",
+                    "Debe completar todos los campos.",
+                    COLOR_PRIMARY,
+                    COLOR_ACCENT
+            );
             return;
         }
 
         controller.resetearContrasenia(usr, nueva);
-        JOptionPane.showMessageDialog(this, "Contraseña actualizada correctamente.");
+
+        mostrarMensaje(
+                "Operación exitosa",
+                "Contraseña actualizada correctamente.",
+                COLOR_PRIMARY,
+                COLOR_ACCENT
+        );
+
         dispose();
     }
 
@@ -207,4 +219,44 @@ public class ResetearContraseniaFrame extends JFrame {
             g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radius, radius);
         }
     }
+    
+    private void mostrarMensaje(String titulo, String mensaje, Color headerBg, Color buttonBg) {
+
+        JDialog dlg = new JDialog(this, titulo, true);
+        dlg.setSize(360, 160);
+        dlg.setLocationRelativeTo(this);
+        dlg.setLayout(new BorderLayout());
+        dlg.getContentPane().setBackground(Color.WHITE);
+
+        // Contenido
+        JPanel content = new JPanel(new BorderLayout());
+        content.setBackground(Color.WHITE);
+        content.setBorder(BorderFactory.createEmptyBorder(20, 22, 10, 22));
+
+        JLabel lblMsg = new JLabel(
+                "<html><div style='text-align:center;'>" + mensaje + "</div></html>"
+        );
+        lblMsg.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 14));
+        lblMsg.setHorizontalAlignment(SwingConstants.CENTER);
+
+        content.add(lblMsg, BorderLayout.CENTER);
+        dlg.add(content, BorderLayout.CENTER);
+
+        // Footer
+        JPanel footer = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        footer.setBackground(Color.WHITE);
+
+        RoundedButton btnOk = new RoundedButton("Aceptar");
+        btnOk.setBackground(buttonBg);
+        btnOk.setForeground(Color.WHITE);
+        btnOk.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 14));
+        btnOk.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnOk.addActionListener(e -> dlg.dispose());
+
+        footer.add(btnOk);
+        dlg.add(footer, BorderLayout.SOUTH);
+
+        dlg.setVisible(true);
+    }
+
 }

@@ -13,7 +13,10 @@ public class ModificarMedicoFrame extends JFrame {
     private ControllerAdministrador controller;
     private String usuarioBuscado;
 
-    private JTextField txtUsuario, txtNombre, txtApellido, txtPass, txtMatricula, txtEspecialidad;
+    private JTextField txtUsuario, txtNombre, txtApellido, txtMatricula, txtEspecialidad;
+    private JPasswordField txtPass;
+
+    private RoundedButton btnGuardar;
 
     private static final String UI_FONT_FAMILY = "Segoe UI";
 
@@ -36,6 +39,7 @@ public class ModificarMedicoFrame extends JFrame {
         getContentPane().setBackground(COLOR_BACKGROUND);
         setLayout(new BorderLayout());
 
+
         JPanel topBar = new JPanel(new BorderLayout());
         topBar.setBackground(COLOR_PRIMARY);
         topBar.setPreferredSize(new Dimension(getWidth(), 80));
@@ -48,7 +52,7 @@ public class ModificarMedicoFrame extends JFrame {
         topBar.add(lblTitulo, BorderLayout.WEST);
         add(topBar, BorderLayout.NORTH);
 
-        //form
+        //CARD
         JPanel wrapper = new JPanel(new GridBagLayout());
         wrapper.setBackground(COLOR_BACKGROUND);
 
@@ -60,10 +64,11 @@ public class ModificarMedicoFrame extends JFrame {
 
         int y = 30;
 
-        // Usuario (NO editable)
+        // Usuario (no editable)
         card.add(crearLabel("Usuario:", 30, y));
         txtUsuario = crearCampo(150, y);
         txtUsuario.setEditable(false);
+        txtUsuario.setBackground(new Color(240, 240, 240));
         card.add(txtUsuario);
         y += 50;
 
@@ -81,7 +86,10 @@ public class ModificarMedicoFrame extends JFrame {
 
         // Contraseña
         card.add(crearLabel("Contraseña:", 30, y));
-        txtPass = crearCampo(150, y);
+        txtPass = new RoundedPasswordField(12);
+        txtPass.setBounds(150, y, 250, 35);
+        txtPass.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 14));
+        txtPass.setBorder(BorderFactory.createEmptyBorder(5, 12, 5, 12));
         card.add(txtPass);
         y += 50;
 
@@ -95,10 +103,10 @@ public class ModificarMedicoFrame extends JFrame {
         card.add(crearLabel("Especialidad:", 30, y));
         txtEspecialidad = crearCampo(150, y);
         card.add(txtEspecialidad);
-        y += 60;
+        y += 70;
 
-        //guardar
-        RoundedButton btnGuardar = new RoundedButton("Guardar Cambios");
+        // Guardar
+        btnGuardar = new RoundedButton("Guardar Cambios");
         btnGuardar.setBackground(COLOR_ACCENT);
         btnGuardar.setForeground(Color.WHITE);
         btnGuardar.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 16));
@@ -112,7 +120,7 @@ public class ModificarMedicoFrame extends JFrame {
         add(wrapper, BorderLayout.CENTER);
     }
 
-
+    //HELPERS
 
     private JLabel crearLabel(String text, int x, int y) {
         JLabel lbl = new JLabel(text);
@@ -130,11 +138,18 @@ public class ModificarMedicoFrame extends JFrame {
         return txt;
     }
 
+
+
     private void cargarDatosDelMedico() {
+
         Medico m = controller.obtenerMedico(usuarioBuscado);
 
         if (m == null) {
-            JOptionPane.showMessageDialog(this, "Médico no encontrado.");
+            mostrarDialogoMensaje(
+                    "Médico inexistente",
+                    "Médico no encontrado.",
+                    COLOR_ACCENT
+            );
             dispose();
             return;
         }
@@ -148,27 +163,84 @@ public class ModificarMedicoFrame extends JFrame {
     }
 
     private void guardarCambios() {
+
         String usr = txtUsuario.getText().trim();
         String nom = txtNombre.getText().trim();
         String ape = txtApellido.getText().trim();
-        String pass = txtPass.getText().trim();
+        String pass = new String(txtPass.getPassword()).trim();
         String mat = txtMatricula.getText().trim();
         String esp = txtEspecialidad.getText().trim();
 
-        if (nom.isEmpty()) { mensaje("Ingrese el nombre."); return; }
-        if (ape.isEmpty()) { mensaje("Ingrese el apellido."); return; }
-        if (pass.isEmpty()) { mensaje("Ingrese la contraseña."); return; }
-        if (mat.isEmpty()) { mensaje("Ingrese la matrícula."); return; }
-        if (esp.isEmpty()) { mensaje("Ingrese la especialidad."); return; }
+        if (nom.isEmpty()) {
+            mostrarDialogoMensaje("Validación", "Ingrese el nombre.", COLOR_ACCENT);
+            return;
+        }
+        if (ape.isEmpty()) {
+            mostrarDialogoMensaje("Validación", "Ingrese el apellido.", COLOR_ACCENT);
+            return;
+        }
+        if (pass.isEmpty()) {
+            mostrarDialogoMensaje("Validación", "Ingrese la contraseña.", COLOR_ACCENT);
+            return;
+        }
+        if (mat.isEmpty()) {
+            mostrarDialogoMensaje("Validación", "Ingrese la matrícula.", COLOR_ACCENT);
+            return;
+        }
+        if (esp.isEmpty()) {
+            mostrarDialogoMensaje("Validación", "Ingrese la especialidad.", COLOR_ACCENT);
+            return;
+        }
 
         controller.modificarMedico(usr, nom, ape, pass, mat, esp);
 
-        JOptionPane.showMessageDialog(this, "Médico modificado correctamente.");
+        mostrarDialogoMensaje(
+                "Operación exitosa",
+                "Médico modificado correctamente.",
+                COLOR_ACCENT
+        );
+
         dispose();
     }
 
-    private void mensaje(String msg) {
-        JOptionPane.showMessageDialog(this, msg);
+
+
+    private void mostrarDialogoMensaje(String titulo, String mensaje, Color buttonBg) {
+
+        JDialog dlg = new JDialog(this, titulo, true);
+        dlg.setSize(380, 160);
+        dlg.setLocationRelativeTo(this);
+        dlg.setLayout(new BorderLayout());
+        dlg.getContentPane().setBackground(Color.WHITE);
+
+        JPanel content = new JPanel(new BorderLayout());
+        content.setBackground(Color.WHITE);
+        content.setBorder(BorderFactory.createEmptyBorder(14, 18, 10, 18));
+
+        JLabel lblMsg = new JLabel(
+                "<html><div style='text-align:center;'>" + mensaje + "</div></html>",
+                SwingConstants.CENTER
+        );
+        lblMsg.setFont(new Font(UI_FONT_FAMILY, Font.PLAIN, 14));
+        content.add(lblMsg, BorderLayout.CENTER);
+
+        dlg.add(content, BorderLayout.CENTER);
+
+        JPanel footer = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        footer.setBackground(Color.WHITE);
+
+        RoundedButton btnOk = new RoundedButton("Aceptar");
+        btnOk.setBackground(buttonBg);
+        btnOk.setForeground(Color.WHITE);
+        btnOk.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 14));
+        btnOk.setBorder(BorderFactory.createEmptyBorder(6, 18, 6, 18));
+        btnOk.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnOk.addActionListener(e -> dlg.dispose());
+
+        footer.add(btnOk);
+        dlg.add(footer, BorderLayout.SOUTH);
+
+        dlg.setVisible(true);
     }
 
 
@@ -196,12 +268,37 @@ public class ModificarMedicoFrame extends JFrame {
         }
     }
 
+    class RoundedPasswordField extends JPasswordField {
+        private int radius;
+
+        public RoundedPasswordField(int radius) {
+            this.radius = radius;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            g2.setColor(Color.WHITE);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
+
+            g2.setColor(new Color(200, 200, 200));
+            g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radius, radius);
+
+            super.paintComponent(g);
+            g2.dispose();
+        }
+    }
+
     private static class RoundedCardPanel extends JPanel {
         private final int radius;
-        private Color borderColor = new Color(200, 200, 200);
+        private Color borderColor;
 
         public RoundedCardPanel(int radius) {
             this.radius = radius;
+            this.borderColor = new Color(200, 200, 200);
             setOpaque(false);
         }
 
@@ -213,41 +310,12 @@ public class ModificarMedicoFrame extends JFrame {
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g;
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
             g2.setColor(getBackground());
             g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
+
             g2.setColor(borderColor);
-            g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, radius, radius);
-        }
-    }
-
-    class RoundedButton extends JButton {
-        private int radius = 15;
-
-        public RoundedButton(String text) {
-            super(text);
-            setOpaque(false);
-            setFocusPainted(false);
-            setContentAreaFilled(false);
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-            g2.setColor(getBackground());
-            g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
-
-            g2.dispose();
-            super.paintComponent(g);
-        }
-
-        @Override
-        public void paintBorder(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setColor(getBackground());
-            g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, radius, radius);
-            g2.dispose();
+            g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radius, radius);
         }
     }
 }
