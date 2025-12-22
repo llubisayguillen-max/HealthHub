@@ -40,7 +40,7 @@ public class DisponibilidadMedicoPacienteFrame extends JFrame {
 		getContentPane().setBackground(COLOR_BACKGROUND);
 		setLayout(new BorderLayout());
 
-		// --- HEADER ---
+		// Header
 		JPanel header = new JPanel(new BorderLayout());
 		header.setBackground(COLOR_PRIMARY);
 		header.setPreferredSize(new Dimension(getWidth(), 80));
@@ -93,6 +93,7 @@ public class DisponibilidadMedicoPacienteFrame extends JFrame {
 
 		add(header, BorderLayout.NORTH);
 
+		// Filtros
 		JPanel panelFiltros = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 15));
 		panelFiltros.setBackground(Color.WHITE);
 		panelFiltros.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, COLOR_CARD_BORDER));
@@ -114,19 +115,16 @@ public class DisponibilidadMedicoPacienteFrame extends JFrame {
 		btnVerTodos.setForeground(new Color(60, 60, 60));
 		btnVerTodos.setFont(BUTTON);
 		btnVerTodos.setFocusPainted(false);
-
 		btnVerTodos.setBorder(BorderFactory.createLineBorder(new Color(180, 180, 180), 1, true));
 		btnVerTodos.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
 		btnVerTodos.addMouseListener(new MouseAdapter() {
 			public void mouseEntered(MouseEvent e) {
-
 				btnVerTodos.setBackground(new Color(245, 245, 245));
 				btnVerTodos.setBorder(BorderFactory.createLineBorder(COLOR_PRIMARY, 1, true));
 			}
 
 			public void mouseExited(MouseEvent e) {
-
 				btnVerTodos.setBackground(Color.WHITE);
 				btnVerTodos.setBorder(BorderFactory.createLineBorder(new Color(180, 180, 180), 1, true));
 			}
@@ -139,11 +137,8 @@ public class DisponibilidadMedicoPacienteFrame extends JFrame {
 		panelFiltros.add(btnBuscar);
 		panelFiltros.add(btnVerTodos);
 
-		add(panelFiltros, BorderLayout.CENTER);
-
 		panelResultados = new JPanel();
 		panelResultados.setBackground(COLOR_BACKGROUND);
-
 		panelResultados.setLayout(new GridLayout(0, 3, 20, 20));
 		panelResultados.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
@@ -171,11 +166,10 @@ public class DisponibilidadMedicoPacienteFrame extends JFrame {
 
 	private void buscarTodos() {
 		try {
-
 			List<Medico> medicos = controller.obtenerTodosMedicos();
 			mostrarResultados(medicos);
 		} catch (Exception e) {
-			JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+			mostrarError("Error de Sistema", e.getMessage());
 		}
 	}
 
@@ -188,7 +182,7 @@ public class DisponibilidadMedicoPacienteFrame extends JFrame {
 			List<Medico> medicos = controller.buscarMedicosPorEspecialidad(esp);
 			mostrarResultados(medicos);
 		} catch (Exception e) {
-			JOptionPane.showMessageDialog(this, "Error buscando médicos: " + e.getMessage());
+			mostrarError("Gestión de Médicos", "No se pudieron buscar: " + e.getMessage());
 		}
 	}
 
@@ -205,32 +199,24 @@ public class DisponibilidadMedicoPacienteFrame extends JFrame {
 			panelResultados.setLayout(new BorderLayout());
 			panelResultados.add(vacioPanel);
 		} else {
-
 			panelResultados.setLayout(new GridLayout(0, 3, 20, 20));
-
 			for (Medico m : medicos) {
-
 				JPanel wrapper = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
 				wrapper.setOpaque(false);
-
 				JPanel card = crearTarjetaMedico(m);
 				wrapper.add(card);
-
 				panelResultados.add(wrapper);
 			}
 		}
-
 		panelResultados.revalidate();
 		panelResultados.repaint();
 	}
 
 	private JPanel crearTarjetaMedico(Medico m) {
-
 		RoundedCardPanel card = new RoundedCardPanel(16);
 		card.setBackground(COLOR_CARD_BG);
 		card.setBorderColor(COLOR_CARD_BORDER);
 		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-
 		card.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
 		Dimension cardSize = new Dimension(260, 210);
@@ -308,7 +294,6 @@ public class DisponibilidadMedicoPacienteFrame extends JFrame {
 			}
 		});
 
-		// Armado
 		card.add(Box.createVerticalStrut(5));
 		card.add(lblIcon);
 		card.add(Box.createVerticalStrut(8));
@@ -327,9 +312,9 @@ public class DisponibilidadMedicoPacienteFrame extends JFrame {
 	private void agregarFavorito(Medico m) {
 		try {
 			controller.agregarAFavoritos(m.getUsuario());
-			JOptionPane.showMessageDialog(this, "Dr/a. " + m.getApellido() + " agregado a favoritos.");
+			mostrarInfo("Favoritos", "Dr/a. " + m.getApellido() + " agregado correctamente.");
 		} catch (Exception e) {
-			JOptionPane.showMessageDialog(this, e.getMessage());
+			mostrarError("Error", e.getMessage());
 		}
 	}
 
@@ -343,7 +328,6 @@ public class DisponibilidadMedicoPacienteFrame extends JFrame {
 	}
 
 	private void mostrarPopupDisponibilidad(Medico m) {
-
 		JDialog dialog = new JDialog(this, "Disponibilidad", true);
 		dialog.setSize(340, 450);
 		dialog.setLocationRelativeTo(this);
@@ -353,7 +337,6 @@ public class DisponibilidadMedicoPacienteFrame extends JFrame {
 		content.setBackground(Color.WHITE);
 		dialog.setContentPane(content);
 
-		// popup
 		JPanel header = new JPanel(new BorderLayout());
 		header.setBackground(COLOR_PRIMARY);
 		header.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
@@ -380,7 +363,7 @@ public class DisponibilidadMedicoPacienteFrame extends JFrame {
 		try {
 			horarios = controller.obtenerProximaDisponibilidad(m.getUsuario());
 		} catch (Exception e) {
-			JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+			mostrarError("Disponibilidad", e.getMessage());
 			return;
 		}
 
@@ -393,14 +376,12 @@ public class DisponibilidadMedicoPacienteFrame extends JFrame {
 		}
 
 		JList<String> lista = new JList<>(listModel);
-
 		lista.setCellRenderer(new HorarioRenderer());
 		lista.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
 		JScrollPane scroll = new JScrollPane(lista);
 		scroll.setBorder(BorderFactory.createEmptyBorder());
 		scroll.getViewport().setBackground(Color.WHITE);
-
 		content.add(scroll, BorderLayout.CENTER);
 
 		JPanel footer = new JPanel(new FlowLayout(FlowLayout.CENTER));
@@ -411,7 +392,6 @@ public class DisponibilidadMedicoPacienteFrame extends JFrame {
 		estiloBoton(btnAgendar, COLOR_ACCENT);
 		btnAgendar.setPreferredSize(new Dimension(200, 40));
 		btnAgendar.setFont(new Font(UI_FONT_FAMILY, Font.BOLD, 14));
-
 		btnAgendar.addActionListener(e -> {
 			dialog.dispose();
 			dispose();
@@ -424,6 +404,86 @@ public class DisponibilidadMedicoPacienteFrame extends JFrame {
 		dialog.setVisible(true);
 	}
 
+	// Mensajes personalizados
+
+	private void mostrarInfo(String titulo, String mensaje) {
+		mostrarDialogoMensaje(titulo, mensaje, COLOR_ACCENT);
+	}
+
+	private void mostrarError(String titulo, String mensaje) {
+		mostrarDialogoMensaje(titulo, mensaje, COLOR_DANGER);
+	}
+
+	private void mostrarDialogoMensaje(String titulo, String mensaje, Color colorBoton) {
+		JDialog dlg = new JDialog(this, titulo, true);
+		dlg.setUndecorated(true);
+		dlg.setSize(400, 180);
+		dlg.setLocationRelativeTo(this);
+
+		RoundedCardPanel mainPanel = new RoundedCardPanel(20);
+		mainPanel.setBackground(Color.WHITE);
+		mainPanel.setBorderColor(new Color(220, 220, 220));
+		mainPanel.setLayout(new BorderLayout());
+
+		// Header con Título e Icono
+		JPanel header = new JPanel(new BorderLayout());
+		header.setOpaque(false);
+		header.setBorder(BorderFactory.createEmptyBorder(12, 15, 5, 12));
+
+		JPanel titleContainer = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+		titleContainer.setOpaque(false);
+
+		JLabel lblIconApp = new JLabel();
+		try {
+			ImageIcon raw = new ImageIcon(getClass().getResource("/gui/img/gestionMedicos.png")); // O el icono de tu
+																									// app
+			Image scaled = raw.getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH);
+			lblIconApp.setIcon(new ImageIcon(scaled));
+		} catch (Exception e) {
+			/* Sin icono */ }
+
+		JLabel lblT = new JLabel(titulo);
+		lblT.setFont(BODY_BOLD);
+		titleContainer.add(lblIconApp);
+		titleContainer.add(lblT);
+		header.add(titleContainer, BorderLayout.WEST);
+
+		JButton btnX = new JButton("✕");
+		btnX.setBorderPainted(false);
+		btnX.setContentAreaFilled(false);
+		btnX.setFocusPainted(false);
+		btnX.setCursor(new Cursor(Cursor.HAND_CURSOR));
+		btnX.addActionListener(e -> dlg.dispose());
+		header.add(btnX, BorderLayout.EAST);
+
+		mainPanel.add(header, BorderLayout.NORTH);
+
+		// Cuerpo
+		JPanel body = new JPanel(new BorderLayout());
+		body.setOpaque(false);
+		body.setBorder(BorderFactory.createEmptyBorder(15, 25, 5, 25));
+		JLabel lblMsg = new JLabel("<html><body style='width: 300px; text-align: left;'>" + mensaje + "</body></html>");
+		lblMsg.setFont(BODY);
+		body.add(lblMsg, BorderLayout.CENTER);
+		mainPanel.add(body, BorderLayout.CENTER);
+
+		// Footer
+		JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 20, 15));
+		footer.setOpaque(false);
+		RoundedButton btnOk = new RoundedButton("Aceptar");
+		btnOk.setBackground(colorBoton);
+		btnOk.setForeground(Color.WHITE);
+		btnOk.setFont(BUTTON);
+		btnOk.setPreferredSize(new Dimension(100, 35));
+		btnOk.addActionListener(e -> dlg.dispose());
+		footer.add(btnOk);
+		mainPanel.add(footer, BorderLayout.SOUTH);
+
+		dlg.setContentPane(mainPanel);
+		dlg.setBackground(new Color(0, 0, 0, 0));
+		dlg.setVisible(true);
+	}
+
 	private class HorarioRenderer extends DefaultListCellRenderer {
 		private final Font font = new Font("Segoe UI", Font.PLAIN, 14);
 		private final Color selectionBg = new Color(230, 245, 255);
@@ -431,7 +491,6 @@ public class DisponibilidadMedicoPacienteFrame extends JFrame {
 		private ImageIcon calendarIcon;
 
 		public HorarioRenderer() {
-
 			try {
 				ImageIcon raw = new ImageIcon(getClass().getResource("/gui/img/calendario.png"));
 				Image scaled = raw.getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH);
@@ -444,31 +503,24 @@ public class DisponibilidadMedicoPacienteFrame extends JFrame {
 		@Override
 		public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected,
 				boolean cellHasFocus) {
-
 			JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-
 			label.setFont(font);
 			label.setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10));
-
 			if (calendarIcon != null && !value.toString().startsWith("Sin")) {
 				label.setIcon(calendarIcon);
 				label.setIconTextGap(12);
 			} else {
 				label.setIcon(null);
 			}
-
 			label.setText(value.toString());
-
 			if (isSelected) {
 				label.setBackground(selectionBg);
 				label.setForeground(COLOR_PRIMARY);
-				label.setOpaque(true);
 			} else {
 				label.setBackground(Color.WHITE);
 				label.setForeground(textCol);
-				label.setOpaque(true);
 			}
-
+			label.setOpaque(true);
 			return label;
 		}
 	}

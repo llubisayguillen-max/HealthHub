@@ -86,25 +86,10 @@ public class NuevoTurnoPacienteFrame extends JFrame {
 		btnVolverHeader.setForeground(Color.WHITE);
 		btnVolverHeader.setFont(BUTTON);
 		btnVolverHeader.setFocusPainted(false);
-
 		btnVolverHeader.setBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createLineBorder(new Color(255, 255, 255, 200), 1, true),
 				BorderFactory.createEmptyBorder(6, 16, 6, 16)));
-
 		btnVolverHeader.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-		// Hover
-		btnVolverHeader.addMouseListener(new java.awt.event.MouseAdapter() {
-			public void mouseEntered(java.awt.event.MouseEvent evt) {
-
-				btnVolverHeader.setBackground(new Color(40, 140, 190));
-			}
-
-			public void mouseExited(java.awt.event.MouseEvent evt) {
-
-				btnVolverHeader.setBackground(COLOR_PRIMARY);
-			}
-		});
 
 		btnVolverHeader.addActionListener(e -> {
 			new GestionTurnosPacienteFrame(paciente).setVisible(true);
@@ -114,9 +99,9 @@ public class NuevoTurnoPacienteFrame extends JFrame {
 		JPanel rightHeader = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
 		rightHeader.setOpaque(false);
 		rightHeader.add(btnVolverHeader);
-
 		header.add(rightHeader, BorderLayout.EAST);
 
+		// Filtros
 		JPanel filtros = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
 		filtros.setBackground(Color.WHITE);
 		filtros.setBorder(BorderFactory.createEmptyBorder(0, 40, 5, 40));
@@ -165,31 +150,29 @@ public class NuevoTurnoPacienteFrame extends JFrame {
 
 		add(topContainer, BorderLayout.NORTH);
 
+		// Tabla
 		JPanel centerWrapper = new JPanel(new BorderLayout());
 		centerWrapper.setBackground(COLOR_BACKGROUND);
 		centerWrapper.setBorder(BorderFactory.createEmptyBorder(10, 40, 10, 40));
 
 		String[] columnas = { "Médico", "Especialidad", "Fecha", "Hora Inicio", "idDisponibilidad" };
-
 		modeloTabla = new DefaultTableModel(columnas, 0) {
 			@Override
-			public boolean isCellEditable(int row, int column) {
+			public boolean isCellEditable(int row, int col) {
 				return false;
 			}
 		};
 
 		tablaTurnosDisponibles = new JTable(modeloTabla);
-		tablaTurnosDisponibles.setRowHeight(26);
+		tablaTurnosDisponibles.setRowHeight(32);
 		tablaTurnosDisponibles.setFont(BODY_SMALL);
 		tablaTurnosDisponibles.getTableHeader().setFont(BODY);
-		tablaTurnosDisponibles.getTableHeader().setReorderingAllowed(false);
 		tablaTurnosDisponibles.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
 		ocultarColumna(4); // Ocultar ID
 
 		JScrollPane scroll = new JScrollPane(tablaTurnosDisponibles);
 		scroll.getViewport().setBackground(Color.WHITE);
-
 		centerWrapper.add(scroll, BorderLayout.CENTER);
 
 		// Botones Footer
@@ -216,14 +199,12 @@ public class NuevoTurnoPacienteFrame extends JFrame {
 		try {
 			String[] especialidades = controllerPaciente.obtenerEspecialidades();
 			cmbEspecialidad.removeAllItems();
-
 			if (especialidades.length == 0) {
 				cmbEspecialidad.addItem("No hay especialidades");
 				return;
 			}
-			for (String esp : especialidades) {
+			for (String esp : especialidades)
 				cmbEspecialidad.addItem(esp);
-			}
 		} catch (Exception e) {
 			cmbEspecialidad.addItem("Error");
 		}
@@ -238,12 +219,12 @@ public class NuevoTurnoPacienteFrame extends JFrame {
 			Date dDesde = dcDesde.getDate();
 			Date dHasta = dcHasta.getDate();
 
-			if (especialidad == null || especialidad.trim().isEmpty() || especialidad.equals("No hay especialidades")) {
-				JOptionPane.showMessageDialog(this, "Seleccione una especialidad válida.");
+			if (especialidad == null || especialidad.equals("No hay especialidades")) {
+				mostrarError("Atención", "Seleccione una especialidad válida.");
 				return;
 			}
 			if (dDesde == null || dHasta == null) {
-				JOptionPane.showMessageDialog(this, "Debe seleccionar ambas fechas (Desde y Hasta).");
+				mostrarError("Atención", "Debe seleccionar ambas fechas.");
 				return;
 			}
 
@@ -251,34 +232,29 @@ public class NuevoTurnoPacienteFrame extends JFrame {
 			LocalDate hasta = dHasta.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 
 			if (hasta.isBefore(desde)) {
-				JOptionPane.showMessageDialog(this, "La fecha 'Hasta' debe ser mayor o igual a 'Desde'.");
+				mostrarError("Atención", "La fecha 'Hasta' no puede ser anterior a 'Desde'.");
 				return;
 			}
 
 			List<TurnoDisponible> items = controllerPaciente.buscarTurnos(especialidad, desde, hasta);
-
 			this.resultadosBusqueda = items;
 
 			for (TurnoDisponible it : items) {
-				String fechaStr = it.fecha().format(F_DDMMYYYY);
-				String horaInicioStr = it.horaInicio().toString();
-
-				modeloTabla.addRow(new Object[] { it.medicoNombre(), it.medicoEspecialidad(), fechaStr, horaInicioStr,
-						it.idDisponibilidad() });
+				modeloTabla.addRow(new Object[] { it.medicoNombre(), it.medicoEspecialidad(),
+						it.fecha().format(F_DDMMYYYY), it.horaInicio().toString(), it.idDisponibilidad() });
 			}
 
 		} catch (IllegalStateException ex) {
-			JOptionPane.showMessageDialog(this, ex.getMessage(), "Sin Resultados", JOptionPane.INFORMATION_MESSAGE);
+			mostrarInfo("Sin Resultados", ex.getMessage());
 		} catch (Exception ex) {
-			JOptionPane.showMessageDialog(this, "Error al buscar turnos: " + ex.getMessage(), "Error",
-					JOptionPane.ERROR_MESSAGE);
+			mostrarError("Error", "Ocurrió un problema al buscar: " + ex.getMessage());
 		}
 	}
 
 	private int filaSeleccionada() {
 		int row = tablaTurnosDisponibles.getSelectedRow();
 		if (row == -1) {
-			JOptionPane.showMessageDialog(this, "Seleccione un turno de la lista para reservar.");
+			mostrarInfo("Atención", "Seleccione un turno de la lista para reservar.");
 		}
 		return row;
 	}
@@ -290,21 +266,17 @@ public class NuevoTurnoPacienteFrame extends JFrame {
 
 		long idDisponibilidad = (long) modeloTabla.getValueAt(row, 4);
 
-		int conf = JOptionPane.showConfirmDialog(this, "¿Confirma la reserva de este turno?", "Confirmar Reserva",
-				JOptionPane.YES_NO_OPTION);
-		if (conf != JOptionPane.YES_OPTION)
+		boolean ok = mostrarDialogoConfirmacion("Confirmar Reserva", "¿Deseas confirmar la reserva de este turno?");
+		if (!ok)
 			return;
 
 		try {
-			long idTurno = controllerPaciente.solicitarTurno(idDisponibilidad);
-			JOptionPane.showMessageDialog(this, "¡Turno reservado con éxito!");
-
+			controllerPaciente.solicitarTurno(idDisponibilidad);
+			mostrarInfo("Reserva Exitosa", "¡Tu turno ha sido reservado con éxito!");
 			// Eliminar fila visualmente
 			modeloTabla.removeRow(row);
-
 		} catch (Exception ex) {
-			JOptionPane.showMessageDialog(this, "Error al reservar: " + ex.getMessage(), "Error",
-					JOptionPane.ERROR_MESSAGE);
+			mostrarError("Error al Reservar", ex.getMessage());
 		}
 	}
 
@@ -325,5 +297,110 @@ public class NuevoTurnoPacienteFrame extends JFrame {
 			col.setMaxWidth(0);
 			col.setPreferredWidth(0);
 		}
+	}
+
+	private boolean mostrarDialogoConfirmacion(String titulo, String mensaje) {
+		final boolean[] resultado = { false };
+		JDialog dlg = new JDialog(this, titulo, true);
+		dlg.setUndecorated(true);
+		dlg.setSize(420, 180);
+		dlg.setLocationRelativeTo(this);
+		dlg.setBackground(new Color(0, 0, 0, 0));
+
+		RoundedCardPanel mainPanel = new RoundedCardPanel(20);
+		mainPanel.setBackground(Color.WHITE);
+		mainPanel.setBorderColor(new Color(220, 220, 220));
+		mainPanel.setLayout(new BorderLayout());
+
+		JPanel body = new JPanel(new BorderLayout());
+		body.setOpaque(false);
+		body.setBorder(BorderFactory.createEmptyBorder(30, 25, 10, 25));
+		JLabel lblMsg = new JLabel(
+				"<html><body style='width: 300px; text-align: center;'>" + mensaje + "</body></html>");
+		lblMsg.setFont(BODY);
+		lblMsg.setHorizontalAlignment(SwingConstants.CENTER);
+		body.add(lblMsg, BorderLayout.CENTER);
+
+		JPanel panelBtns = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 15));
+		panelBtns.setOpaque(false);
+
+		RoundedButton btnNo = new RoundedButton("No");
+		btnNo.setBackground(COLOR_DANGER);
+		btnNo.setForeground(Color.WHITE);
+		btnNo.setFocusPainted(false);
+		btnNo.setPreferredSize(new Dimension(80, 35));
+		btnNo.addActionListener(e -> {
+			resultado[0] = false;
+			dlg.dispose();
+		});
+
+		RoundedButton btnSi = new RoundedButton("Sí");
+		btnSi.setBackground(COLOR_ACCENT);
+		btnSi.setForeground(Color.WHITE);
+		btnSi.setFocusPainted(false);
+		btnSi.setPreferredSize(new Dimension(80, 35));
+		btnSi.addActionListener(e -> {
+			resultado[0] = true;
+			dlg.dispose();
+		});
+
+		panelBtns.add(btnNo);
+		panelBtns.add(btnSi);
+		mainPanel.add(body, BorderLayout.CENTER);
+		mainPanel.add(panelBtns, BorderLayout.SOUTH);
+
+		dlg.setContentPane(mainPanel);
+		dlg.setVisible(true);
+		return resultado[0];
+	}
+
+	private void mostrarInfo(String titulo, String mensaje) {
+		mostrarDialogoMensaje(titulo, mensaje, COLOR_ACCENT);
+	}
+
+	private void mostrarError(String titulo, String mensaje) {
+		mostrarDialogoMensaje(titulo, mensaje, COLOR_DANGER);
+	}
+
+	private void mostrarDialogoMensaje(String titulo, String mensaje, Color colorBoton) {
+		JDialog dlg = new JDialog(this, titulo, true);
+		dlg.setUndecorated(true);
+
+		dlg.setSize(480, 190);
+		dlg.setLocationRelativeTo(this);
+		dlg.setBackground(new Color(0, 0, 0, 0));
+
+		RoundedCardPanel mainPanel = new RoundedCardPanel(20);
+		mainPanel.setBackground(Color.WHITE);
+		mainPanel.setBorderColor(new Color(220, 220, 220));
+		mainPanel.setLayout(new BorderLayout());
+
+		JPanel body = new JPanel(new BorderLayout());
+		body.setOpaque(false);
+
+		body.setBorder(BorderFactory.createEmptyBorder(35, 30, 10, 30));
+
+		JLabel lblMsg = new JLabel("<html><center style='font-family: Segoe UI;'>" + mensaje + "</center></html>");
+		lblMsg.setFont(BODY);
+		lblMsg.setHorizontalAlignment(SwingConstants.CENTER);
+		body.add(lblMsg, BorderLayout.CENTER);
+		mainPanel.add(body, BorderLayout.CENTER);
+
+		JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 25, 15));
+		footer.setOpaque(false);
+		RoundedButton btnOk = new RoundedButton("Aceptar");
+		btnOk.setBackground(colorBoton);
+		btnOk.setForeground(Color.WHITE);
+		btnOk.setFont(BUTTON);
+		btnOk.setPreferredSize(new Dimension(110, 38));
+
+		btnOk.setFocusPainted(false);
+
+		btnOk.addActionListener(e -> dlg.dispose());
+		footer.add(btnOk);
+		mainPanel.add(footer, BorderLayout.SOUTH);
+
+		dlg.setContentPane(mainPanel);
+		dlg.setVisible(true);
 	}
 }

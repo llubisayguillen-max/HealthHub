@@ -69,7 +69,7 @@ public class MenuPacienteFrame extends JFrame {
 
 		// Card 1: Gestión de Turnos
 		JPanel cardTurnos = crearCard("Gestión de Turnos", "/gui/img/TurnosMed.png",
-				"Solicitá, visualizá y cancelá turnos", "Gestionar mis citas", "Ver mis Turnos", () -> {
+				"Solicitá, visualizá y cancelá turnos", "Gestioná tus citas", "Ver mis Turnos", () -> {
 					new GestionTurnosPacienteFrame(paciente).setVisible(true);
 					dispose();
 				});
@@ -83,7 +83,7 @@ public class MenuPacienteFrame extends JFrame {
 
 		// Card 3: Favoritos y Recomendaciones
 		JPanel cardFavoritos = crearCard("Mis Favoritos", "/gui/img/gestionPacientes.png",
-				"Médicos guardados y recomendaciones", "Accesos rápidos", "Ver Favoritos", () -> {
+				"Médicos guardados y recomendaciones", "Acceso a preferencias", "Ver Favoritos", () -> {
 					new FavoritosPacienteFrame(paciente).setVisible(true);
 					dispose();
 				});
